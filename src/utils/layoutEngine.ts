@@ -1,10 +1,10 @@
 import type { FamilyData, FamilyMember, LayoutNode, LayoutEdge, TreeLayout, EdgeType } from '../types/family';
 import { getGenerationLabel } from './dateUtils';
 
-const NODE_SIZE = 110;
-const HORIZONTAL_GAP = 70;
-const SPOUSE_GAP = 50;
-const VERTICAL_LEVEL_GAP = 240;
+const NODE_SIZE = 180; // Width of card container
+const HORIZONTAL_GAP = 120; // Gap between sibling / distinct family units
+const SPOUSE_GAP = 90; // Clear gap between husband and wife
+const VERTICAL_LEVEL_GAP = 280; // Vertical distance between generation levels
 
 /**
  * Calculates a clean hierarchical layout for the family tree
@@ -61,7 +61,7 @@ export function computeFamilyTreeLayout(data: FamilyData): TreeLayout {
   const generationLevels: { generation: number; name: string; y: number; count: number }[] = [];
 
   sortedGenerations.forEach((gen, idx) => {
-    const yPos = 120 + idx * VERTICAL_LEVEL_GAP;
+    const yPos = 140 + idx * VERTICAL_LEVEL_GAP;
     generationYMap.set(gen, yPos);
     generationLevels.push({
       generation: gen,
@@ -73,17 +73,19 @@ export function computeFamilyTreeLayout(data: FamilyData): TreeLayout {
 
   sortedGenerations.forEach(gen => {
     const genMembers = generationsMap.get(gen) || [];
-    const y = generationYMap.get(gen) || 120;
+    const y = generationYMap.get(gen) || 140;
     
     const placedInGen = new Set<string>();
     const units: FamilyMember[][] = [];
 
+    // Group couples together (bidirectional check)
     genMembers.forEach(member => {
       if (placedInGen.has(member.id)) return;
 
       const unit: FamilyMember[] = [member];
       placedInGen.add(member.id);
 
+      // Check spouses defined on member
       if (member.spouses && member.spouses.length > 0) {
         member.spouses.forEach(sp => {
           const spouseObj = members[sp.spouseId];
@@ -93,6 +95,14 @@ export function computeFamilyTreeLayout(data: FamilyData): TreeLayout {
           }
         });
       }
+
+      // Also check if any other member in this generation lists this member as spouse
+      genMembers.forEach(other => {
+        if (!placedInGen.has(other.id) && other.spouses && other.spouses.some(s => s.spouseId === member.id)) {
+          unit.push(other);
+          placedInGen.add(other.id);
+        }
+      });
 
       units.push(unit);
     });
@@ -132,11 +142,27 @@ export function computeFamilyTreeLayout(data: FamilyData): TreeLayout {
   });
 
   // 3. Connect Layout Edges
+  // A. Marriage / Spousal Edges
   memberList.forEach(m => {
     const nodeA = nodes[m.id];
-    if (!nodeA || !m.spouses) return;
+    if (!nodeA) return;
 
-    m.spouses.forEach(sp => {
+    // Check spouses on m or where other lists m
+    const spousesToCheck: Array<{ spouseId: string; status: any }> = [
+      ...(m.spouses || [])
+    ];
+
+    memberList.forEach(other => {
+      if (other.id !== m.id && other.spouses) {
+        other.spouses.forEach(s => {
+          if (s.spouseId === m.id && !spousesToCheck.some(st => st.spouseId === other.id)) {
+            spousesToCheck.push({ spouseId: other.id, status: s.status });
+          }
+        });
+      }
+    });
+
+    spousesToCheck.forEach(sp => {
       const nodeB = nodes[sp.spouseId];
       if (!nodeB) return;
 
@@ -148,9 +174,11 @@ export function computeFamilyTreeLayout(data: FamilyData): TreeLayout {
         ? 'marriage-divorced' 
         : 'marriage-active';
 
-      const startX = Math.min(nodeA.x, nodeB.x) + NODE_SIZE / 2;
-      const endX = Math.max(nodeA.x, nodeB.x) - NODE_SIZE / 2;
-      const midY = nodeA.y;
+      // Connect between circular avatar frames
+      const avatarRadius = 46;
+      const startX = Math.min(nodeA.x, nodeB.x) + avatarRadius;
+      const endX = Math.max(nodeA.x, nodeB.x) - avatarRadius;
+      const midY = nodeA.y - 30; // Level with center of circular avatar
       const midX = (nodeA.x + nodeB.x) / 2;
 
       edges.push({
@@ -168,7 +196,7 @@ export function computeFamilyTreeLayout(data: FamilyData): TreeLayout {
     });
   });
 
-  // Parent-Child Edges
+  // B. Parent-Child Edges (Descendance lines)
   const parentPairsToChildren = new Map<string, FamilyMember[]>();
   
   memberList.forEach(m => {
@@ -188,22 +216,22 @@ export function computeFamilyTreeLayout(data: FamilyData): TreeLayout {
 
     if (pIds.length >= 2 && nodes[pIds[0]] && nodes[pIds[1]]) {
       originX = (nodes[pIds[0]].x + nodes[pIds[1]].x) / 2;
-      originY = (nodes[pIds[0]].y + nodes[pIds[1]].y) / 2;
+      originY = nodes[pIds[0]].y - 30; // Origin from marriage center
     } else if (pIds.length === 1 && nodes[pIds[0]]) {
       originX = nodes[pIds[0]].x;
-      originY = nodes[pIds[0]].y + NODE_SIZE / 2;
+      originY = nodes[pIds[0]].y + 50;
     } else {
       return;
     }
 
-    const midDropY = originY + (VERTICAL_LEVEL_GAP - NODE_SIZE) / 2;
+    const midDropY = originY + (VERTICAL_LEVEL_GAP - 90) / 2;
 
     children.forEach(child => {
       const childNode = nodes[child.id];
       if (!childNode) return;
 
       const targetX = childNode.x;
-      const targetY = childNode.y - NODE_SIZE / 2;
+      const targetY = childNode.y - 75; // Top of child's avatar
 
       const edgeType: EdgeType = child.relationshipToParents === 'adopted' || child.relationshipToParents === 'foster'
         ? 'parent-child-adopted'

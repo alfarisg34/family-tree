@@ -45,14 +45,36 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     .map((id) => familyData.members[id])
     .filter(Boolean);
 
-  const spousesWithDetails = (member.spouses || [])
-    .map((sp) => ({
-      member: familyData.members[sp.spouseId],
-      status: sp.status,
-      marriageDate: sp.marriageDate,
-      divorceDate: sp.divorceDate
-    }))
-    .filter((s) => Boolean(s.member));
+  // Find spouses bidirectional
+  const spousesWithDetailsMap = new Map<string, { member: FamilyMember; status: any; marriageDate?: string; divorceDate?: string }>();
+
+  (member.spouses || []).forEach((sp) => {
+    const mem = familyData.members[sp.spouseId];
+    if (mem) {
+      spousesWithDetailsMap.set(mem.id, {
+        member: mem,
+        status: sp.status,
+        marriageDate: sp.marriageDate,
+        divorceDate: sp.divorceDate
+      });
+    }
+  });
+
+  Object.values(familyData.members).forEach((other) => {
+    if (other.id !== member.id && other.spouses) {
+      const match = other.spouses.find((s) => s.spouseId === member.id);
+      if (match && !spousesWithDetailsMap.has(other.id)) {
+        spousesWithDetailsMap.set(other.id, {
+          member: other,
+          status: match.status,
+          marriageDate: match.marriageDate,
+          divorceDate: match.divorceDate
+        });
+      }
+    }
+  });
+
+  const spousesWithDetails = Array.from(spousesWithDetailsMap.values());
 
   // Find siblings (same parents)
   const siblings = Object.values(familyData.members).filter((m) => {
@@ -123,7 +145,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Attributes Grid (Only attributes with values are displayed) */}
+          {/* Attributes Grid */}
           <div className="attributes-grid">
             {/* Tanggal & Tempat Lahir */}
             {(member.birthDate || member.birthPlace) && (

@@ -74,34 +74,62 @@ export function useFamilyData() {
     localStorage.removeItem(ADMIN_STORAGE_KEY);
   };
 
-  // Add / Update member
+  // Add / Update member with bidirectional relation synchronization
   const saveMember = (member: FamilyMember) => {
     setFamilyData((prev) => {
       const updatedMembers = { ...prev.members, [member.id]: member };
       
-      if (member.spouses && member.spouses.length > 0) {
-        member.spouses.forEach((sp) => {
-          const spouseObj = updatedMembers[sp.spouseId];
-          if (spouseObj) {
-            const existingSpIndex = (spouseObj.spouses || []).findIndex(s => s.spouseId === member.id);
-            const spouseRelationObj = {
-              spouseId: member.id,
-              status: sp.status,
-              marriageDate: sp.marriageDate,
-              divorceDate: sp.divorceDate,
-              note: sp.note
-            };
+      // Synchronize bidirectional spouse relationships
+      const currentSpouseIds = new Set((member.spouses || []).map((s) => s.spouseId));
 
-            const newSpousesList = [...(spouseObj.spouses || [])];
-            if (existingSpIndex >= 0) {
-              newSpousesList[existingSpIndex] = spouseRelationObj;
-            } else {
-              newSpousesList.push(spouseRelationObj);
-            }
-            updatedMembers[sp.spouseId] = { ...spouseObj, spouses: newSpousesList };
+      // 1. Update/Add reciprocal spouse link in each spouse's record
+      (member.spouses || []).forEach((sp) => {
+        const spouseObj = updatedMembers[sp.spouseId];
+        if (spouseObj) {
+          const spouseList = spouseObj.spouses || [];
+          const existingIdx = spouseList.findIndex((s) => s.spouseId === member.id);
+          const reciprocalEntry = {
+            spouseId: member.id,
+            status: sp.status,
+            marriageDate: sp.marriageDate,
+            divorceDate: sp.divorceDate,
+            note: sp.note
+          };
+
+          let newSpouseList = [...spouseList];
+          if (existingIdx >= 0) {
+            newSpouseList[existingIdx] = reciprocalEntry;
+          } else {
+            newSpouseList.push(reciprocalEntry);
           }
-        });
-      }
+
+          updatedMembers[sp.spouseId] = {
+            ...spouseObj,
+            spouses: newSpouseList
+          };
+
+          if (isSupabaseConfigured()) {
+            saveMemberToSupabase(updatedMembers[sp.spouseId]);
+          }
+        }
+      });
+
+      // 2. Remove reciprocal spouse link from any previous spouses that were removed
+      Object.keys(updatedMembers).forEach((otherId) => {
+        if (otherId !== member.id && !currentSpouseIds.has(otherId)) {
+          const otherMember = updatedMembers[otherId];
+          if (otherMember.spouses && otherMember.spouses.some((s) => s.spouseId === member.id)) {
+            const cleanedSpouses = otherMember.spouses.filter((s) => s.spouseId !== member.id);
+            updatedMembers[otherId] = {
+              ...otherMember,
+              spouses: cleanedSpouses
+            };
+            if (isSupabaseConfigured()) {
+              saveMemberToSupabase(updatedMembers[otherId]);
+            }
+          }
+        }
+      });
 
       const newData = {
         ...prev,
@@ -109,7 +137,6 @@ export function useFamilyData() {
         updatedAt: new Date().toISOString()
       };
 
-      // Background sync to Supabase if connected
       if (isSupabaseConfigured()) {
         saveMemberToSupabase(member);
       }
@@ -139,7 +166,7 @@ export function useFamilyData() {
       let generation = sourceMember.generation;
       let parentIds: string[] = [];
       let relationshipToParents: ParentRelationType = extraOptions?.relationshipType || 'biological';
-      let spousesList: FamilyMember['spouses'] = [];
+      let calculatedSpouses: FamilyMember['spouses'] = [];
 
       if (relationDirection === 'parent') {
         generation = Math.max(1, sourceMember.generation - 1);
@@ -162,12 +189,13 @@ export function useFamilyData() {
       } else if (relationDirection === 'spouse') {
         generation = sourceMember.generation;
         const marriageStatus: MarriageStatus = extraOptions?.marriageStatus || 'married';
-        spousesList = [{
+        
+        calculatedSpouses = [{
           spouseId: sourceMemberId,
           status: marriageStatus
         }];
 
-        const sourceSpouses = [...(sourceMember.spouses || []), {
+        const sourceSpouses = [...(sourceMember.spouses || []).filter(s => s.spouseId !== newId), {
           spouseId: newId,
           status: marriageStatus
         }];
@@ -185,12 +213,18 @@ export function useFamilyData() {
         ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80&auto=format&fit=crop'
         : 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&q=80&auto=format&fit=crop';
 
+      // Merge spouses carefully so calculatedSpouses is not overwritten
+      const finalSpouses = calculatedSpouses.length > 0 
+        ? calculatedSpouses 
+        : (partialData.spouses || []);
+
       const newMember: FamilyMember = {
+        ...partialData,
         id: newId,
         fullName: partialData.fullName || 'Nama Anggota Baru',
         nickname: partialData.nickname || '',
         title: partialData.title || '',
-        gender: partialData.gender || 'male',
+        gender: partialData.gender || 'female',
         generation,
         birthDate: partialData.birthDate || '',
         birthPlace: partialData.birthPlace || '',
@@ -207,11 +241,10 @@ export function useFamilyData() {
         bio: partialData.bio || '',
         avatar: partialData.avatar || defaultAvatar,
         gallery: partialData.gallery || [],
-        parentIds,
+        parentIds: parentIds.length > 0 ? parentIds : (partialData.parentIds || []),
         relationshipToParents,
-        spouses: spousesList,
-        order: (sourceMember.order || 1) + 1,
-        ...partialData
+        spouses: finalSpouses,
+        order: (sourceMember.order || 1) + 1
       };
 
       updatedMembers[newId] = newMember;

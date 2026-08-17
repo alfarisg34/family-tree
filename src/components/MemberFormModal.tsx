@@ -4,6 +4,8 @@ import type {
   FamilyData,
   Gender,
   ParentRelationType,
+  MarriageStatus,
+  SpouseRelation,
   GalleryPhoto
 } from '../types/family';
 import { optimizeImage, formatBytes } from '../utils/imageOptimizer';
@@ -11,7 +13,10 @@ import {
   X,
   Upload,
   Plus,
-  CheckCircle2
+  Trash2,
+  CheckCircle2,
+  Heart,
+  Users
 } from 'lucide-react';
 
 interface MemberFormModalProps {
@@ -33,12 +38,36 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 }) => {
   const isEditing = Boolean(initialMember?.id);
   const sourceMember = sourceNodeIdForRelation ? familyData.members[sourceNodeIdForRelation] : undefined;
+  const allOtherMembers = Object.values(familyData.members).filter(
+    (m) => m.id !== initialMember?.id
+  );
 
   let defaultGen = initialMember?.generation || 1;
+  let initialSpouses: SpouseRelation[] = initialMember?.spouses ? [...initialMember.spouses] : [];
+  let initialParents: string[] = initialMember?.parentIds ? [...initialMember.parentIds] : [];
+  let defaultGender: Gender = initialMember?.gender || 'male';
+
   if (!isEditing && sourceMember && relationDirection) {
-    if (relationDirection === 'parent') defaultGen = Math.max(1, sourceMember.generation - 1);
-    else if (relationDirection === 'child') defaultGen = sourceMember.generation + 1;
-    else defaultGen = sourceMember.generation;
+    if (relationDirection === 'parent') {
+      defaultGen = Math.max(1, sourceMember.generation - 1);
+    } else if (relationDirection === 'child') {
+      defaultGen = sourceMember.generation + 1;
+      initialParents = [sourceMember.id];
+      if (sourceMember.spouses && sourceMember.spouses.length > 0) {
+        const activeSp = sourceMember.spouses.find(s => s.status === 'married') || sourceMember.spouses[0];
+        if (activeSp) initialParents.push(activeSp.spouseId);
+      }
+    } else if (relationDirection === 'spouse') {
+      defaultGen = sourceMember.generation;
+      defaultGender = sourceMember.gender === 'male' ? 'female' : 'male';
+      initialSpouses = [{
+        spouseId: sourceMember.id,
+        status: 'married'
+      }];
+    } else if (relationDirection === 'sibling') {
+      defaultGen = sourceMember.generation;
+      initialParents = [...(sourceMember.parentIds || [])];
+    }
   }
 
   const [formData, setFormData] = useState<Partial<FamilyMember>>({
@@ -46,7 +75,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     fullName: initialMember?.fullName || '',
     nickname: initialMember?.nickname || '',
     title: initialMember?.title || '',
-    gender: initialMember?.gender || 'male',
+    gender: defaultGender,
     generation: defaultGen,
     birthDate: initialMember?.birthDate || '',
     birthPlace: initialMember?.birthPlace || '',
@@ -61,10 +90,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     phone: initialMember?.phone || '',
     email: initialMember?.email || '',
     bio: initialMember?.bio || '',
-    avatar: initialMember?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80&auto=format&fit=crop',
-    parentIds: initialMember?.parentIds || (sourceMember && relationDirection === 'child' ? [sourceMember.id] : []),
+    avatar: initialMember?.avatar || (defaultGender === 'female' 
+      ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80&auto=format&fit=crop'
+      : 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&q=80&auto=format&fit=crop'),
+    parentIds: initialParents,
     relationshipToParents: initialMember?.relationshipToParents || 'biological',
-    spouses: initialMember?.spouses || [],
+    spouses: initialSpouses,
     gallery: initialMember?.gallery || []
   });
 
@@ -140,6 +171,49 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     }));
   };
 
+  // Spouse Management
+  const handleAddSpouse = () => {
+    const availableSpouse = allOtherMembers.find(
+      (m) => !(formData.spouses || []).some((s) => s.spouseId === m.id)
+    );
+    if (!availableSpouse) {
+      alert('Tidak ada anggota keluarga lain yang tersedia untuk dipilih sebagai pasangan.');
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      spouses: [
+        ...(prev.spouses || []),
+        {
+          spouseId: availableSpouse.id,
+          status: 'married'
+        }
+      ]
+    }));
+  };
+
+  const handleUpdateSpouse = (index: number, field: keyof SpouseRelation, value: any) => {
+    setFormData((prev) => {
+      const updated = [...(prev.spouses || [])];
+      updated[index] = {
+        ...updated[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        spouses: updated
+      };
+    });
+  };
+
+  const handleRemoveSpouse = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      spouses: (prev.spouses || []).filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || formData.fullName.trim() === '') {
@@ -165,7 +239,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 : 'Tambah Anggota Keluarga Baru'}
             </h3>
             <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-              Lengkapi informasi profil, silsilah garis keluarga, dan dokumentasi foto.
+              Lengkapi informasi profil, silsilah garis keluarga, pasangan, dan dokumentasi foto.
             </p>
           </div>
           <button className="modal-close-btn" onClick={onClose} style={{ position: 'static' }}>
@@ -235,11 +309,11 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           {/* 1. Informasi Pokok */}
           <div className="form-grid-2">
             <div className="form-group">
-              <label className="form-label">Nama Lengkap & Gelar *</label>
+              <label className="form-label">Nama Lengkap *</label>
               <input
                 type="text"
                 required
-                placeholder="Contoh: Raden Mas Sastrowardoyo, S.T."
+                placeholder="Contoh: Raden Mas Sastrowardoyo"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 className="form-input"
@@ -247,12 +321,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Nama Panggilan / Alias</label>
+              <label className="form-label">Gelar (Depan / Belakang)</label>
               <input
                 type="text"
-                placeholder="Contoh: Eyang Buyut Kakung"
-                value={formData.nickname}
-                onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                placeholder="Contoh: R.M. / S.T. / Drh."
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="form-input"
               />
             </div>
@@ -260,31 +334,127 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
           <div className="form-grid-2">
             <div className="form-group">
-              <label className="form-label">Jenis Kelamin</label>
-              <select
-                value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
-                className="form-select"
-              >
-                <option value="male">Laki-laki (♂)</option>
-                <option value="female">Perempuan (♀)</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Generasi (1 = Buyut, 2 = Kakek, 3 = Ortu, 4 = Anak)</label>
+              <label className="form-label">Nama Panggilan / Alias</label>
               <input
-                type="number"
-                min={1}
-                max={10}
-                value={formData.generation}
-                onChange={(e) => setFormData({ ...formData, generation: parseInt(e.target.value) || 1 })}
+                type="text"
+                placeholder="Contoh: Kakang / Eyang Hendra"
+                value={formData.nickname}
+                onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
                 className="form-input"
               />
             </div>
+
+            <div className="form-grid-2" style={{ gap: 8 }}>
+              <div className="form-group">
+                <label className="form-label">Jenis Kelamin</label>
+                <select
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
+                  className="form-select"
+                >
+                  <option value="male">Laki-laki (♂)</option>
+                  <option value="female">Perempuan (♀)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Generasi</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={formData.generation}
+                  onChange={(e) => setFormData({ ...formData, generation: parseInt(e.target.value) || 1 })}
+                  className="form-input"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* 2. Status Kehidupan */}
+          {/* 2. Hubungan Pasangan (Suami / Istri / Mantan) */}
+          <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-gold)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Heart size={15} /> Pasangan (Suami / Istri / Mantan)
+              </div>
+              <button
+                type="button"
+                className="btn-nav-glass"
+                onClick={handleAddSpouse}
+                style={{ fontSize: 11, padding: '3px 8px' }}
+              >
+                <Plus size={12} /> Tambah Pasangan
+              </button>
+            </div>
+
+            {(!formData.spouses || formData.spouses.length === 0) ? (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                Belum ada pasangan yang dihubungkan. Klik "Tambah Pasangan" di atas untuk menghubungkan.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {formData.spouses.map((sp, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'center',
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      padding: 10,
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-glass)'
+                    }}
+                  >
+                    <select
+                      value={sp.spouseId}
+                      onChange={(e) => handleUpdateSpouse(idx, 'spouseId', e.target.value)}
+                      className="form-select"
+                      style={{ flex: 2, fontSize: 12.5 }}
+                    >
+                      {allOtherMembers.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.fullName} ({m.gender === 'female' ? 'Perempuan' : 'Laki-laki'})
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={sp.status}
+                      onChange={(e) => handleUpdateSpouse(idx, 'status', e.target.value as MarriageStatus)}
+                      className="form-select"
+                      style={{ flex: 1.5, fontSize: 12.5 }}
+                    >
+                      <option value="married">💍 Menikah</option>
+                      <option value="divorced">💔 Bercerai</option>
+                      <option value="separated">Berpisah</option>
+                      <option value="widowed">Pasangan Wafat</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSpouse(idx)}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.2)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#f87171',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '6px 8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Hapus Relasi Pasangan"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 3. Status Kehidupan (Hidup / Wafat) */}
           <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <label className="form-label" style={{ margin: 0, color: 'var(--text-gold)', fontWeight: 700 }}>
@@ -330,15 +500,15 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             )}
           </div>
 
-          {/* 3. Garis Silsilah */}
+          {/* 4. Garis Silsilah & Hubungan Orang Tua */}
           <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-gold)', marginBottom: 12 }}>
-              Garis Silsilah & Hubungan Orang Tua
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-gold)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Users size={15} /> Garis Silsilah & Hubungan Orang Tua
             </div>
 
             <div className="form-grid-2">
               <div className="form-group">
-                <label className="form-label">Tipe Hubungan Anak ke Orang Tua</label>
+                <label className="form-label">Tipe Hubungan ke Orang Tua</label>
                 <select
                   value={formData.relationshipToParents}
                   onChange={(e) => setFormData({ ...formData, relationshipToParents: e.target.value as ParentRelationType })}
@@ -365,7 +535,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             </div>
           </div>
 
-          {/* 4. Detail Lanjutan */}
+          {/* 5. Detail Lanjutan */}
           <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Tanggal Lahir</label>
@@ -394,7 +564,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
               <label className="form-label">Pendidikan Terakhir</label>
               <input
                 type="text"
-                placeholder="Contoh: S1 Teknik Sipil ITB"
+                placeholder="Contoh: S1 Kedokteran Hewan UGM"
                 value={formData.education}
                 onChange={(e) => setFormData({ ...formData, education: e.target.value })}
                 className="form-input"
@@ -405,7 +575,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
               <label className="form-label">Pekerjaan & Tempat Kerja</label>
               <input
                 type="text"
-                placeholder="Contoh: Dokter Spesialis - RS UI"
+                placeholder="Contoh: Dokter Hewan - Klinik Satwa Medika"
                 value={formData.occupation}
                 onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                 className="form-input"
@@ -448,7 +618,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             />
           </div>
 
-          {/* 5. Galeri Foto Karosel */}
+          {/* 6. Galeri Foto Karosel */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <label className="form-label" style={{ margin: 0 }}>
