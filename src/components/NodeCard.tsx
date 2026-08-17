@@ -36,7 +36,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
 
   return (
     <div
-      className={`tree-node-wrapper ${isAdmin ? 'admin-mode' : ''}`}
+      className={`tree-node-wrapper ${isAdmin ? 'admin-mode' : ''} ${isSelected ? 'is-selected' : ''}`}
       style={{
         left: `${node.x}px`,
         top: `${node.y}px`,

@@ -270,18 +270,49 @@ body {
   color: white;
 }
 
-/* Quick Add Buttons in Admin Mode */
+/* Quick Add Buttons in Admin Mode (Hidden by default, shown smoothly on hover) */
 .node-quick-actions {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
   margin-top: 8px;
-  padding: 2px 4px;
-  z-index: 70;
+  padding: 4px;
+  position: relative;
+  z-index: 80;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: 0.18s; /* Grace delay: Prevents instant disappearance when mouse moves */
+}
+
+/* Invisible hover bridge connecting card, label, and action buttons */
+.node-quick-actions::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  bottom: -10px;
+  left: -20px;
+  right: -20px;
+  background: transparent;
+  z-index: -1;
   pointer-events: auto;
-  transition: all 0.2s ease;
-  animation: fadeIn 0.2s ease;
+}
+
+/* Show buttons on node hover or selection */
+.tree-node-wrapper:hover .node-quick-actions,
+.tree-node-card:hover .node-quick-actions,
+.tree-node-wrapper.is-selected .node-quick-actions,
+.node-quick-actions:hover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition-delay: 0s; /* Immediate display on hover */
+}
+
+.tree-node-wrapper:hover {
+  z-index: 95 !important;
 }
 
 .quick-action-btn {
