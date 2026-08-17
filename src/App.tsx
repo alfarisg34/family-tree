@@ -13,23 +13,45 @@ import { LegendPanel } from './components/LegendPanel';
 import { MemberDetailModal } from './components/MemberDetailModal';
 import { MemberFormModal } from './components/MemberFormModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
-import { DatabaseModal } from './components/DatabaseModal';
+
+// Helper to extract clean slug from URL
+function getSlugFromUrl(): string {
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+  return path || 'keluargabanisukandi';
+}
 
 export const App: React.FC = () => {
+  const [currentSlug, setCurrentSlug] = useState<string>(getSlugFromUrl);
+
+  // Sync with browser URL changes (Back / Forward button)
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentSlug(getSlugFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Update browser URL on tree navigation without full page reload
+  const handleNavigateToSlug = (newSlug: string) => {
+    const clean = newSlug.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'keluargabanisukandi';
+    window.history.pushState({}, '', '/' + clean);
+    setCurrentSlug(clean);
+    setSelectedMemberId(null);
+    setHighlightedMemberId(null);
+  };
+
   const {
     familyData,
+    allTrees,
     isAdmin,
     isCloudSyncing,
     loginAdmin,
     logoutAdmin,
     saveMember,
     addRelative,
-    deleteMember,
-    exportJSON,
-    importJSON,
-    resetToSample,
-    updateEntireFamilyData
-  } = useFamilyData();
+    deleteMember
+  } = useFamilyData(currentSlug);
 
   // Compute graph layout
   const layout = useMemo(() => {
@@ -66,16 +88,13 @@ export const App: React.FC = () => {
   // Admin Login Modal State
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
 
-  // Database Modal State
-  const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
-
-  // Auto-fit on first load
+  // Auto-fit on slug switch or first load
   useEffect(() => {
     const timer = setTimeout(() => {
       fitView(layout.bounds);
-    }, 150);
+    }, 200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [currentSlug, Object.keys(familyData.members).length]);
 
   // Handle clicking a node on the tree
   const handleNodeClick = (node: LayoutNode) => {
@@ -129,12 +148,21 @@ export const App: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  // Save member from Form
-  const handleSaveMemberForm = (member: FamilyMember) => {
+  // Save member from Form (with optional children re-ordering)
+  const handleSaveMemberForm = (member: FamilyMember, reorderedChildren?: FamilyMember[]) => {
     if (formSourceNodeId && formRelationDirection) {
       addRelative(formSourceNodeId, formRelationDirection, member);
     } else {
       saveMember(member);
+    }
+
+    if (reorderedChildren && reorderedChildren.length > 0) {
+      reorderedChildren.forEach((child, index) => {
+        saveMember({
+          ...child,
+          order: index + 1
+        });
+      });
     }
   };
 
@@ -145,20 +173,15 @@ export const App: React.FC = () => {
       {/* 1. Header Navbar */}
       <Navbar
         familyData={familyData}
+        currentSlug={currentSlug}
+        allTrees={allTrees}
         isAdmin={isAdmin}
         isCloudSyncing={isCloudSyncing}
+        onNavigateToSlug={handleNavigateToSlug}
         onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
         onLogoutAdmin={logoutAdmin}
         onOpenAddMember={handleOpenAddMemberNavbar}
         onFlyToMember={handleFlyToMember}
-        onExportJSON={exportJSON}
-        onImportJSON={(jsonStr) => {
-          const ok = importJSON(jsonStr);
-          if (ok) alert('Data silsilah berhasil diimport!');
-          else alert('Format file JSON tidak valid.');
-        }}
-        onResetSample={resetToSample}
-        onOpenDatabaseModal={() => setIsDatabaseModalOpen(true)}
       />
 
       {/* 2. Map Canvas (Drag & Pinch Zoomable Container) */}
@@ -237,15 +260,6 @@ export const App: React.FC = () => {
         <AdminLoginModal
           onLogin={loginAdmin}
           onClose={() => setIsAdminLoginOpen(false)}
-        />
-      )}
-
-      {/* Database & Supabase Settings Modal */}
-      {isDatabaseModalOpen && (
-        <DatabaseModal
-          familyData={familyData}
-          onUpdateFamilyData={updateEntireFamilyData}
-          onClose={() => setIsDatabaseModalOpen(false)}
         />
       )}
     </div>

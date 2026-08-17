@@ -91,17 +91,21 @@ export function calculateAge(birthDateStr?: string, isDeceased: boolean = false,
 export function getGenerationLabel(gen: number): string {
   switch (gen) {
     case 1:
-      return 'Generasi I (Buyut / Leluhur)';
+      return 'Generasi I (Leluhur Tertua / Canggah)';
     case 2:
-      return 'Generasi II (Kakek & Nenek)';
+      return 'Generasi II (Eyang Buyut)';
     case 3:
-      return 'Generasi III (Orang Tua & Paman/Bibi)';
+      return 'Generasi III (Kakek & Nenek)';
     case 4:
-      return 'Generasi IV (Anak & Menantu)';
+      return 'Generasi IV (Orang Tua & Paman/Bibi)';
     case 5:
-      return 'Generasi V (Cucu & Keponakan)';
+      return 'Generasi V (Anak & Menantu)';
     case 6:
-      return 'Generasi VI (Cicit)';
+      return 'Generasi VI (Cucu & Keponakan)';
+    case 7:
+      return 'Generasi VII (Cicit)';
+    case 8:
+      return 'Generasi VIII (Piut / Wareng)';
     default:
       return `Generasi ${gen}`;
   }

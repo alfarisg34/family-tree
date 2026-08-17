@@ -1,50 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { FamilyData, FamilyMember } from '../types/family';
-import { isSupabaseConfigured } from '../utils/supabaseClient';
 import {
   Search,
   Shield,
   ShieldAlert,
   UserPlus,
-  Download,
-  Upload,
-  RotateCcw,
   GitGraph,
-  Database
+  ChevronDown,
+  Plus
 } from 'lucide-react';
 
 interface NavbarProps {
   familyData: FamilyData;
+  currentSlug: string;
+  allTrees: Array<{ id: string; slug: string; tree_name: string }>;
   isAdmin: boolean;
   isCloudSyncing?: boolean;
+  onNavigateToSlug: (slug: string) => void;
   onOpenAdminLogin: () => void;
   onLogoutAdmin: () => void;
   onOpenAddMember: () => void;
   onFlyToMember: (memberId: string) => void;
-  onExportJSON: () => void;
-  onImportJSON: (jsonStr: string) => void;
-  onResetSample: () => void;
-  onOpenDatabaseModal: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   familyData,
+  currentSlug,
+  allTrees,
   isAdmin,
   isCloudSyncing = false,
+  onNavigateToSlug,
   onOpenAdminLogin,
   onLogoutAdmin,
   onOpenAddMember,
-  onFlyToMember,
-  onExportJSON,
-  onImportJSON,
-  onResetSample,
-  onOpenDatabaseModal
+  onFlyToMember
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isTreeSwitcherOpen, setIsTreeSwitcherOpen] = useState(false);
+  
   const searchRef = useRef<HTMLDivElement | null>(null);
-  const importFileRef = useRef<HTMLInputElement | null>(null);
-  const isSupabaseReady = isSupabaseConfigured();
+  const switcherRef = useRef<HTMLDivElement | null>(null);
 
   const membersList = Object.values(familyData.members);
 
@@ -64,6 +60,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setIsSearchOpen(false);
       }
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setIsTreeSwitcherOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -75,34 +74,190 @@ export const Navbar: React.FC<NavbarProps> = ({
     onFlyToMember(m.id);
   };
 
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleCreateNewTree = () => {
+    const newName = window.prompt('Masukkan nama keluarga baru (Contoh: Keluarga Hajjah Robbanisah):');
+    if (!newName || !newName.trim()) return;
+    
+    const generatedSlug = newName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        onImportJSON(content);
-      }
-    };
-    reader.readAsText(file);
+    if (generatedSlug) {
+      setIsTreeSwitcherOpen(false);
+      onNavigateToSlug(generatedSlug);
+    }
   };
 
   return (
     <header className="app-navbar">
-      {/* Brand / Title */}
-      <div className="nav-brand-section">
+      {/* Brand / Multi-Family Tree Switcher */}
+      <div className="nav-brand-section" ref={switcherRef} style={{ position: 'relative' }}>
         <div className="nav-logo-icon">
           <GitGraph size={22} />
         </div>
-        <div>
-          <h1 className="nav-title">{familyData.familyTreeName}</h1>
+        
+        <div
+          onClick={() => {
+            if (isAdmin) {
+              setIsTreeSwitcherOpen(!isTreeSwitcherOpen);
+            }
+          }}
+          style={{
+            cursor: isAdmin ? 'pointer' : 'default',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+          title={isAdmin ? 'Klik untuk beralih keluarga atau membuat silsilah baru (Mode Admin)' : undefined}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <h1 className="nav-title">{familyData.familyTreeName}</h1>
+            {isAdmin && (
+              <ChevronDown size={16} style={{ color: 'var(--text-gold)', opacity: 0.8 }} />
+            )}
+          </div>
           <div className="nav-subtitle">
-            {membersList.length} Anggota Keluarga • Multi-Generasi Silsilah
+            {isAdmin ? `/${currentSlug} • ` : ''}{membersList.length} Anggota Keluarga • Multi-Generasi Silsilah
             {isCloudSyncing && <span style={{ color: 'var(--text-gold)', marginLeft: 6 }}>• Menyinkronkan...</span>}
           </div>
         </div>
+
+        {/* Tree Switcher Dropdown (Admin Only) */}
+        {isAdmin && isTreeSwitcherOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 10px)',
+              left: 0,
+              minWidth: 300,
+              background: '#0f172a',
+              border: '1px solid var(--border-glass-highlight)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-elevated)',
+              overflow: 'hidden',
+              zIndex: 110,
+              backdropFilter: 'blur(20px)',
+              padding: 6
+            }}
+          >
+            <div style={{ padding: '8px 10px 4px', fontSize: 11, fontWeight: 700, color: 'var(--text-gold)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Pilih Silsilah Keluarga:
+            </div>
+
+            {/* List of default/known trees */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div
+                onClick={() => {
+                  setIsTreeSwitcherOpen(false);
+                  onNavigateToSlug('keluargabanisukandi');
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  background: currentSlug === 'keluargabanisukandi' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                  borderLeft: currentSlug === 'keluargabanisukandi' ? '3px solid var(--accent-gold)' : '3px solid transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'background 0.15s ease'
+                }}
+                onMouseEnter={(e) => { if (currentSlug !== 'keluargabanisukandi') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                onMouseLeave={(e) => { if (currentSlug !== 'keluargabanisukandi') e.currentTarget.style.background = 'transparent'; }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
+                    Keluarga Besar Bani Sukandi
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/keluargabanisukandi</div>
+                </div>
+                {currentSlug === 'keluargabanisukandi' && (
+                  <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700 }}>Aktif</span>
+                )}
+              </div>
+
+              <div
+                onClick={() => {
+                  setIsTreeSwitcherOpen(false);
+                  onNavigateToSlug('keluargahajjahrobbanisah');
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  background: currentSlug === 'keluargahajjahrobbanisah' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                  borderLeft: currentSlug === 'keluargahajjahrobbanisah' ? '3px solid var(--accent-gold)' : '3px solid transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'background 0.15s ease'
+                }}
+                onMouseEnter={(e) => { if (currentSlug !== 'keluargahajjahrobbanisah') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                onMouseLeave={(e) => { if (currentSlug !== 'keluargahajjahrobbanisah') e.currentTarget.style.background = 'transparent'; }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
+                    Keluarga Besar Hajjah Robbanisah
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/keluargahajjahrobbanisah</div>
+                </div>
+                {currentSlug === 'keluargahajjahrobbanisah' && (
+                  <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700 }}>Aktif</span>
+                )}
+              </div>
+
+              {/* Any other dynamically discovered trees */}
+              {allTrees
+                .filter(t => t.slug && t.slug !== 'keluargabanisukandi' && t.slug !== 'keluargahajjahrobbanisah')
+                .map((tree) => (
+                  <div
+                    key={tree.id || tree.slug}
+                    onClick={() => {
+                      setIsTreeSwitcherOpen(false);
+                      onNavigateToSlug(tree.slug);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      background: currentSlug === tree.slug ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                      borderLeft: currentSlug === tree.slug ? '3px solid var(--accent-gold)' : '3px solid transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{tree.tree_name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/{tree.slug}</div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Create New Tree Option */}
+            <div style={{ borderTop: '1px solid var(--border-glass)', marginTop: 6, paddingTop: 6 }}>
+              <div
+                onClick={handleCreateNewTree}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  color: 'var(--text-gold)',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Plus size={14} /> + Buat Silsilah Keluarga Baru...
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Center Search Input with Instant Fly-to AutoComplete */}
@@ -141,15 +296,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={m.id}
                 onClick={() => handleSelectSearchResult(m)}
                 style={{
+                  padding: '10px 14px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 14px',
+                  gap: 12,
                   cursor: 'pointer',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                   transition: 'background 0.15s ease'
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.12)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <img
@@ -179,59 +334,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right Actions */}
       <div className="nav-actions-section">
-        {/* Supabase Database Config Button */}
-        <button
-          className="btn-nav-glass"
-          onClick={onOpenDatabaseModal}
-          title="Pengaturan Database Supabase"
-          style={{
-            borderColor: isSupabaseReady ? 'rgba(16, 185, 129, 0.4)' : undefined,
-            color: isSupabaseReady ? '#34d399' : undefined
-          }}
-        >
-          <Database size={15} />
-          <span>{isSupabaseReady ? 'Supabase' : 'Database'}</span>
-        </button>
-
-        <input
-          type="file"
-          ref={importFileRef}
-          onChange={handleFileImport}
-          accept=".json"
-          style={{ display: 'none' }}
-        />
-
-        <button
-          className="btn-nav-glass"
-          onClick={onExportJSON}
-          title="Download Backup Data Silsilah (JSON)"
-        >
-          <Download size={15} />
-          <span>Backup</span>
-        </button>
-
-        <button
-          className="btn-nav-glass"
-          onClick={() => importFileRef.current?.click()}
-          title="Import Data Silsilah dari file JSON"
-        >
-          <Upload size={15} />
-          <span>Import</span>
-        </button>
-
-        <button
-          className="btn-nav-glass"
-          onClick={() => {
-            if (window.confirm('Reset data silsilah ke contoh default 4 generasi?')) {
-              onResetSample();
-            }
-          }}
-          title="Reset ke Contoh Silsilah Default"
-        >
-          <RotateCcw size={15} />
-          <span>Reset</span>
-        </button>
-
         {isAdmin ? (
           <>
             <button className="btn-nav-primary" onClick={onOpenAddMember}>

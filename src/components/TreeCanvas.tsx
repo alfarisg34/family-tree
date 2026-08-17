@@ -121,16 +121,33 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
             </g>
           );
         })}
+        {/* Horizontal Generation Level Subtle Guide Lines */}
+        {generationLevels.map((lvl) => (
+          <line
+            key={`lvl-line-${lvl.generation}`}
+            x1={lvl.minX + 340}
+            y1={lvl.y}
+            x2={lvl.maxX + 80}
+            y2={lvl.y}
+            stroke="rgba(245, 158, 11, 0.12)"
+            strokeDasharray="4,6"
+            strokeWidth={1.5}
+          />
+        ))}
       </svg>
 
+      {/* Generation Level Badges (Aligned in Straight Vertical Column on Left) */}
       {generationLevels.map((lvl) => (
         <div
           key={lvl.generation}
           className="generation-level-marker"
-          style={{ top: `${lvl.y}px` }}
+          style={{
+            top: `${lvl.y}px`,
+            left: `${lvl.minX}px`
+          }}
         >
           <div className="generation-level-pill">
-            <span>{lvl.name}</span>
+            <span style={{ color: '#f8fafc', fontWeight: 700 }}>{lvl.name}</span>
             <span className="count">{lvl.count} Anggota</span>
           </div>
         </div>

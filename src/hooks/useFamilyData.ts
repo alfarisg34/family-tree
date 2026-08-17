@@ -1,29 +1,36 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FamilyData, FamilyMember, ParentRelationType, MarriageStatus } from '../types/family';
-import { initialFamilyData } from '../data/sampleFamily';
+import { getInitialFamilyDataBySlug } from '../data/sampleFamily';
 import { isSupabaseConfigured } from '../utils/supabaseClient';
 import {
   fetchFamilyDataFromSupabase,
   saveMemberToSupabase,
   deleteMemberFromSupabase,
-  syncEntireTreeToSupabase
+  syncEntireTreeToSupabase,
+  fetchAllFamilyTreesFromSupabase
 } from '../services/supabaseService';
 
-const STORAGE_KEY = 'family_tree_data_v1';
 const ADMIN_STORAGE_KEY = 'family_tree_admin_session';
 
-export function useFamilyData() {
+export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
+  const storageKey = `family_tree_data_${currentSlug}`;
+
   const [familyData, setFamilyData] = useState<FamilyData>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         return JSON.parse(saved);
       }
     } catch (e) {
       console.error('Failed to load family data from localStorage', e);
     }
-    return initialFamilyData;
+    return getInitialFamilyDataBySlug(currentSlug);
   });
+
+  const [allTrees, setAllTrees] = useState<Array<{ id: string; slug: string; tree_name: string }>>([
+    { id: '1', slug: 'keluargabanisukandi', tree_name: 'Keluarga Besar Bani Sukandi' },
+    { id: '2', slug: 'keluargahajjahrobbanisah', tree_name: 'Keluarga Besar Hajjah Robbanisah' }
+  ]);
 
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     try {
@@ -34,42 +41,61 @@ export function useFamilyData() {
   });
 
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
-  const isInitialSyncDone = useRef(false);
+  const loadedSlugRef = useRef<string>('');
 
-  // Automatic load & automatic initial sync with Supabase
+  // Fetch all family trees list for switcher
   useEffect(() => {
-    if (isSupabaseConfigured() && !isInitialSyncDone.current) {
-      isInitialSyncDone.current = true;
-      setIsCloudSyncing(true);
-
-      fetchFamilyDataFromSupabase()
-        .then(async (remoteData) => {
-          if (remoteData && Object.keys(remoteData.members).length > 0) {
-            // Load remote data from Supabase
-            setFamilyData(remoteData);
-          } else {
-            // Supabase is empty: Automatically seed / sync current tree data to Supabase!
-            console.log('Supabase is empty, automatically synchronizing initial family tree...');
-            await syncEntireTreeToSupabase(familyData);
-          }
-        })
-        .catch((e) => {
-          console.warn('Could not sync with Supabase, using local data', e);
-        })
-        .finally(() => {
-          setIsCloudSyncing(false);
-        });
+    if (isSupabaseConfigured()) {
+      fetchAllFamilyTreesFromSupabase().then((trees) => {
+        if (trees && trees.length > 0) {
+          setAllTrees(trees);
+        }
+      });
     }
-  }, []);
+  }, [currentSlug]);
+
+  // Load tree data for currentSlug from Supabase
+  useEffect(() => {
+    if (loadedSlugRef.current !== currentSlug) {
+      loadedSlugRef.current = currentSlug;
+
+      // First check local cache
+      const localSaved = localStorage.getItem(`family_tree_data_${currentSlug}`);
+      if (localSaved) {
+        try {
+          setFamilyData(JSON.parse(localSaved));
+        } catch {}
+      } else {
+        setFamilyData(getInitialFamilyDataBySlug(currentSlug));
+      }
+
+      // Then fetch remote from Supabase
+      if (isSupabaseConfigured()) {
+        setIsCloudSyncing(true);
+        fetchFamilyDataFromSupabase(currentSlug)
+          .then((remoteData) => {
+            if (remoteData && Object.keys(remoteData.members).length > 0) {
+              setFamilyData(remoteData);
+            }
+          })
+          .catch((e) => {
+            console.warn(`Could not sync slug ${currentSlug} with Supabase:`, e);
+          })
+          .finally(() => {
+            setIsCloudSyncing(false);
+          });
+      }
+    }
+  }, [currentSlug]);
 
   // Save to localStorage whenever data changes
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(familyData));
+      localStorage.setItem(`family_tree_data_${currentSlug}`, JSON.stringify(familyData));
     } catch (e) {
       console.error('Failed to save to localStorage', e);
     }
-  }, [familyData]);
+  }, [familyData, currentSlug]);
 
   // Admin login / logout
   const loginAdmin = (password: string): boolean => {
@@ -90,6 +116,7 @@ export function useFamilyData() {
   const saveMember = (member: FamilyMember) => {
     setFamilyData((prev) => {
       const updatedMembers = { ...prev.members, [member.id]: member };
+      const treeId = prev.treeId || prev.id;
       
       // Synchronize bidirectional spouse relationships
       const currentSpouseIds = new Set((member.spouses || []).map((s) => s.spouseId));
@@ -121,7 +148,7 @@ export function useFamilyData() {
           };
 
           if (isSupabaseConfigured()) {
-            saveMemberToSupabase(updatedMembers[sp.spouseId]);
+            saveMemberToSupabase(updatedMembers[sp.spouseId], treeId);
           }
         }
       });
@@ -137,7 +164,7 @@ export function useFamilyData() {
               spouses: cleanedSpouses
             };
             if (isSupabaseConfigured()) {
-              saveMemberToSupabase(updatedMembers[otherId]);
+              saveMemberToSupabase(updatedMembers[otherId], treeId);
             }
           }
         }
@@ -150,7 +177,7 @@ export function useFamilyData() {
       };
 
       if (isSupabaseConfigured()) {
-        saveMemberToSupabase(member);
+        saveMemberToSupabase(member, treeId);
       }
 
       return newData;
@@ -172,6 +199,7 @@ export function useFamilyData() {
       const sourceMember = prev.members[sourceMemberId];
       if (!sourceMember) return prev;
 
+      const treeId = prev.treeId || prev.id;
       const newId = 'mem-' + Date.now();
       const updatedMembers = { ...prev.members };
 
@@ -181,10 +209,29 @@ export function useFamilyData() {
       let calculatedSpouses: FamilyMember['spouses'] = [];
 
       if (relationDirection === 'parent') {
-        generation = Math.max(1, sourceMember.generation - 1);
-        const updatedSourceParents = Array.from(new Set([...(sourceMember.parentIds || []), newId]));
+        const targetGen = (sourceMember.generation || 1) - 1;
+        if (targetGen < 1) {
+          // New parent is older than Generation 1: Shift all existing members by +1!
+          Object.keys(updatedMembers).forEach((key) => {
+            const m = updatedMembers[key];
+            const newGen = (m.generation || 1) + 1;
+            updatedMembers[key] = {
+              ...m,
+              generation: newGen
+            };
+            if (isSupabaseConfigured()) {
+              saveMemberToSupabase(updatedMembers[key], treeId);
+            }
+          });
+          generation = 1;
+        } else {
+          generation = targetGen;
+        }
+
+        const currentParents = updatedMembers[sourceMemberId]?.parentIds || sourceMember.parentIds || [];
+        const updatedSourceParents = Array.from(new Set([...currentParents, newId]));
         updatedMembers[sourceMemberId] = {
-          ...sourceMember,
+          ...updatedMembers[sourceMemberId],
           parentIds: updatedSourceParents
         };
       } else if (relationDirection === 'child') {
@@ -198,6 +245,23 @@ export function useFamilyData() {
             parentIds.push(activeSpouse.spouseId);
           }
         }
+
+        // Auto-shift existing siblings if this new child is inserted at or before their order
+        const targetOrder = partialData.order || 1;
+        Object.keys(updatedMembers).forEach((key) => {
+          const m = updatedMembers[key];
+          if (m.parentIds && m.parentIds.includes(sourceMemberId)) {
+            if ((m.order || 1) >= targetOrder) {
+              updatedMembers[key] = {
+                ...m,
+                order: (m.order || 1) + 1
+              };
+              if (isSupabaseConfigured()) {
+                saveMemberToSupabase(updatedMembers[key], treeId);
+              }
+            }
+          }
+        });
       } else if (relationDirection === 'spouse') {
         generation = sourceMember.generation;
         const marriageStatus: MarriageStatus = extraOptions?.marriageStatus || 'married';
@@ -255,15 +319,15 @@ export function useFamilyData() {
         parentIds: parentIds.length > 0 ? parentIds : (partialData.parentIds || []),
         relationshipToParents,
         spouses: finalSpouses,
-        order: (sourceMember.order || 1) + 1
+        order: partialData.order || (sourceMember.order || 1) + 1
       };
 
       updatedMembers[newId] = newMember;
 
       if (isSupabaseConfigured()) {
-        saveMemberToSupabase(newMember);
+        saveMemberToSupabase(newMember, treeId);
         if (updatedMembers[sourceMemberId]) {
-          saveMemberToSupabase(updatedMembers[sourceMemberId]);
+          saveMemberToSupabase(updatedMembers[sourceMemberId], treeId);
         }
       }
 
@@ -278,6 +342,7 @@ export function useFamilyData() {
   // Delete Member
   const deleteMember = (id: string) => {
     setFamilyData((prev) => {
+      const treeId = prev.treeId || prev.id;
       const updatedMembers = { ...prev.members };
       delete updatedMembers[id];
 
@@ -304,7 +369,7 @@ export function useFamilyData() {
             spouses: newSpouses
           };
           if (isSupabaseConfigured()) {
-            saveMemberToSupabase(updatedMembers[key]);
+            saveMemberToSupabase(updatedMembers[key], treeId);
           }
         }
       });
@@ -321,48 +386,16 @@ export function useFamilyData() {
     });
   };
 
-  // Export JSON
-  const exportJSON = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(familyData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `silsilah_keluarga_${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  };
-
-  // Import JSON
-  const importJSON = (jsonString: string): boolean => {
-    try {
-      const parsed = JSON.parse(jsonString);
-      if (parsed && parsed.members && typeof parsed.members === 'object') {
-        setFamilyData(parsed);
-        if (isSupabaseConfigured()) {
-          syncEntireTreeToSupabase(parsed);
-        }
-        return true;
-      }
-    } catch (e) {
-      console.error('Invalid JSON file', e);
-    }
-    return false;
-  };
-
-  // Reset to default sample
-  const resetToSample = () => {
-    setFamilyData(initialFamilyData);
-    if (isSupabaseConfigured()) {
-      syncEntireTreeToSupabase(initialFamilyData);
-    }
-  };
-
   const updateEntireFamilyData = (newData: FamilyData) => {
     setFamilyData(newData);
+    if (isSupabaseConfigured()) {
+      syncEntireTreeToSupabase(newData, currentSlug);
+    }
   };
 
   return {
     familyData,
+    allTrees,
     isAdmin,
     isCloudSyncing,
     loginAdmin,
@@ -370,9 +403,6 @@ export function useFamilyData() {
     saveMember,
     addRelative,
     deleteMember,
-    exportJSON,
-    importJSON,
-    resetToSample,
     updateEntireFamilyData
   };
 }

@@ -1,19 +1,24 @@
 -- ==============================================================================
--- SUPABASE DATABASE SCHEMA FOR INTERACTIVE FAMILY TREE
+-- SUPABASE DATABASE SCHEMA FOR INTERACTIVE FAMILY TREE (MULTI-FAMILY ROUTING)
 -- Jalankan script SQL ini di Supabase SQL Editor (Dashboard > SQL Editor > New query)
 -- Script ini bersifat IDEMPOTEN (Aman dijalankan berkali-kali tanpa error)
 -- ==============================================================================
 
--- 1. Buat Tabel Family Trees
+-- 1. Buat Tabel Family Trees (dengan kolom slug untuk multi-routing)
 CREATE TABLE IF NOT EXISTS public.family_trees (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tree_name TEXT NOT NULL DEFAULT 'Bani Sastrowardoyo & Siti Aminah',
+    slug TEXT UNIQUE,
+    tree_name TEXT NOT NULL DEFAULT 'Keluarga Besar Sukandi',
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Buat Tabel Family Members
+-- Pastikan kolom slug ada jika tabel sudah dibuat sebelumnya
+ALTER TABLE public.family_trees ADD COLUMN IF NOT EXISTS slug TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_family_trees_slug ON public.family_trees(slug);
+
+-- 2. Buat Tabel Family Members (dengan tree_id foreign key)
 CREATE TABLE IF NOT EXISTS public.family_members (
     id TEXT PRIMARY KEY,
     tree_id UUID REFERENCES public.family_trees(id) ON DELETE CASCADE,
@@ -46,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.family_members (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Indeks untuk Query Cepat
+-- 3. Indeks untuk Query Cepat Multi-Pohon
 CREATE INDEX IF NOT EXISTS idx_family_members_tree_id ON public.family_members(tree_id);
 CREATE INDEX IF NOT EXISTS idx_family_members_generation ON public.family_members(generation);
 
@@ -54,7 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_family_members_generation ON public.family_member
 ALTER TABLE public.family_trees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.family_members ENABLE ROW LEVEL SECURITY;
 
--- 5. Drop existing policies jika sudah ada sebelumnya agar tidak terjadi error duplicate
+-- 5. Drop policies lama jika sudah ada agar tidak duplikat
 DROP POLICY IF EXISTS "Allow public read access on family_trees" ON public.family_trees;
 DROP POLICY IF EXISTS "Allow public insert/update on family_trees" ON public.family_trees;
 DROP POLICY IF EXISTS "Allow public read access on family_members" ON public.family_members;
@@ -93,7 +98,7 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('family-photos', 'family-photos', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Drop existing storage policies jika sudah ada
+-- Drop storage policies lama jika sudah ada
 DROP POLICY IF EXISTS "Allow public read family photos" ON storage.objects;
 DROP POLICY IF EXISTS "Allow public insert family photos" ON storage.objects;
 DROP POLICY IF EXISTS "Allow public update family photos" ON storage.objects;

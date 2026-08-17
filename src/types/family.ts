@@ -65,6 +65,9 @@ export interface FamilyMember {
 }
 
 export interface FamilyData {
+  id?: string;
+  treeId?: string;
+  slug?: string;
   familyTreeName: string;
   description?: string;
   members: Record<string, FamilyMember>;
@@ -112,7 +115,7 @@ export interface TreeLayout {
     width: number;
     height: number;
   };
-  generationLevels: { generation: number; name: string; y: number; count: number }[];
+  generationLevels: { generation: number; name: string; y: number; count: number; minX: number; maxX: number; centerX: number }[];
 }
 
 export type LODLevel = 'macro' | 'medium' | 'micro';
