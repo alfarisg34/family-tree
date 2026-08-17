@@ -68,6 +68,72 @@ function mapMemberToDbRow(member: FamilyMember, treeId?: string): Record<string,
 }
 
 /**
+ * Upload photo to Supabase Storage 'family-photos' bucket
+ * Returns CDN public URL or fallback DataURL
+ */
+export async function uploadImageToSupabaseStorage(
+  dataUrlOrFile: string | File | Blob,
+  folder: 'avatars' | 'gallery' = 'avatars',
+  filename?: string
+): Promise<string> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return typeof dataUrlOrFile === 'string' ? dataUrlOrFile : '';
+
+  // If it is already an external HTTP link, keep as is
+  if (typeof dataUrlOrFile === 'string' && dataUrlOrFile.startsWith('http')) {
+    return dataUrlOrFile;
+  }
+
+  try {
+    let blob: Blob;
+    let contentType = 'image/webp';
+
+    if (typeof dataUrlOrFile === 'string') {
+      const parts = dataUrlOrFile.split(',');
+      const match = dataUrlOrFile.match(/data:([^;]+);/);
+      if (match) contentType = match[1];
+      const byteString = atob(parts[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      blob = new Blob([ab], { type: contentType });
+    } else {
+      blob = dataUrlOrFile;
+      contentType = dataUrlOrFile.type || 'image/jpeg';
+    }
+
+    const ext = contentType.includes('webp') ? 'webp' : contentType.includes('png') ? 'png' : 'jpg';
+    const cleanFilename = filename 
+      ? `${filename}-${Date.now()}.${ext}` 
+      : `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${ext}`;
+    const filePath = `${folder}/${cleanFilename}`;
+
+    const { error } = await supabase.storage
+      .from('family-photos')
+      .upload(filePath, blob, {
+        contentType,
+        upsert: true
+      });
+
+    if (error) {
+      console.warn('Supabase Storage notice (using optimized fallback):', error.message);
+      return typeof dataUrlOrFile === 'string' ? dataUrlOrFile : '';
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('family-photos')
+      .getPublicUrl(filePath);
+
+    return publicUrlData.publicUrl;
+  } catch (e) {
+    console.warn('Storage upload notice (using fallback):', e);
+    return typeof dataUrlOrFile === 'string' ? dataUrlOrFile : '';
+  }
+}
+
+/**
  * Fetch tree data & all family members from Supabase
  */
 export async function fetchFamilyDataFromSupabase(): Promise<FamilyData | null> {

@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FamilyData, FamilyMember, ParentRelationType, MarriageStatus } from '../types/family';
 import { initialFamilyData } from '../data/sampleFamily';
 import { isSupabaseConfigured } from '../utils/supabaseClient';
 import {
   fetchFamilyDataFromSupabase,
   saveMemberToSupabase,
-  deleteMemberFromSupabase
+  deleteMemberFromSupabase,
+  syncEntireTreeToSupabase
 } from '../services/supabaseService';
 
 const STORAGE_KEY = 'family_tree_data_v1';
@@ -33,20 +34,31 @@ export function useFamilyData() {
   });
 
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const isInitialSyncDone = useRef(false);
 
-  // Attempt initial load from Supabase if configured
+  // Automatic load & automatic initial sync with Supabase
   useEffect(() => {
-    if (isSupabaseConfigured()) {
+    if (isSupabaseConfigured() && !isInitialSyncDone.current) {
+      isInitialSyncDone.current = true;
       setIsCloudSyncing(true);
-      fetchFamilyDataFromSupabase().then((remoteData) => {
-        setIsCloudSyncing(false);
-        if (remoteData && Object.keys(remoteData.members).length > 0) {
-          setFamilyData(remoteData);
-        }
-      }).catch((e) => {
-        setIsCloudSyncing(false);
-        console.warn('Could not load from Supabase, using local data', e);
-      });
+
+      fetchFamilyDataFromSupabase()
+        .then(async (remoteData) => {
+          if (remoteData && Object.keys(remoteData.members).length > 0) {
+            // Load remote data from Supabase
+            setFamilyData(remoteData);
+          } else {
+            // Supabase is empty: Automatically seed / sync current tree data to Supabase!
+            console.log('Supabase is empty, automatically synchronizing initial family tree...');
+            await syncEntireTreeToSupabase(familyData);
+          }
+        })
+        .catch((e) => {
+          console.warn('Could not sync with Supabase, using local data', e);
+        })
+        .finally(() => {
+          setIsCloudSyncing(false);
+        });
     }
   }, []);
 
@@ -82,7 +94,7 @@ export function useFamilyData() {
       // Synchronize bidirectional spouse relationships
       const currentSpouseIds = new Set((member.spouses || []).map((s) => s.spouseId));
 
-      // 1. Update/Add reciprocal spouse link in each spouse's record
+      // 1. Update reciprocal spouse link in each spouse's record
       (member.spouses || []).forEach((sp) => {
         const spouseObj = updatedMembers[sp.spouseId];
         if (spouseObj) {
@@ -114,7 +126,7 @@ export function useFamilyData() {
         }
       });
 
-      // 2. Remove reciprocal spouse link from any previous spouses that were removed
+      // 2. Remove reciprocal spouse link from removed spouses
       Object.keys(updatedMembers).forEach((otherId) => {
         if (otherId !== member.id && !currentSpouseIds.has(otherId)) {
           const otherMember = updatedMembers[otherId];
@@ -213,7 +225,6 @@ export function useFamilyData() {
         ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80&auto=format&fit=crop'
         : 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&q=80&auto=format&fit=crop';
 
-      // Merge spouses carefully so calculatedSpouses is not overwritten
       const finalSpouses = calculatedSpouses.length > 0 
         ? calculatedSpouses 
         : (partialData.spouses || []);
@@ -327,6 +338,9 @@ export function useFamilyData() {
       const parsed = JSON.parse(jsonString);
       if (parsed && parsed.members && typeof parsed.members === 'object') {
         setFamilyData(parsed);
+        if (isSupabaseConfigured()) {
+          syncEntireTreeToSupabase(parsed);
+        }
         return true;
       }
     } catch (e) {
@@ -338,6 +352,9 @@ export function useFamilyData() {
   // Reset to default sample
   const resetToSample = () => {
     setFamilyData(initialFamilyData);
+    if (isSupabaseConfigured()) {
+      syncEntireTreeToSupabase(initialFamilyData);
+    }
   };
 
   const updateEntireFamilyData = (newData: FamilyData) => {

@@ -8,6 +8,7 @@ import type {
   SpouseRelation,
   GalleryPhoto
 } from '../types/family';
+import { uploadImageToSupabaseStorage } from '../services/supabaseService';
 import { optimizeImage, formatBytes } from '../utils/imageOptimizer';
 import {
   X,
@@ -104,28 +105,36 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Automatic photo compression on device
+  // Automatic photo compression on device + Supabase Storage upload
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setIsOptimizing(true);
-      setOptimizationStatus('Mengompresi dan mengoptimalkan foto...');
+      setOptimizationStatus('Mengompresi foto & mengunggah ke Supabase...');
 
       const result = await optimizeImage(file, 600, 600, 0.82);
       
+      // Upload to Supabase Storage (or returns result.dataUrl as fallback)
+      const finalUrl = await uploadImageToSupabaseStorage(
+        result.dataUrl,
+        'avatars',
+        formData.id || 'avatar'
+      );
+      
       setFormData((prev) => ({
         ...prev,
-        avatar: result.dataUrl
+        avatar: finalUrl || result.dataUrl
       }));
 
+      const isCloud = finalUrl && finalUrl.startsWith('http') && !finalUrl.startsWith('data:');
       setOptimizationStatus(
-        `✓ Foto dioptimasi: ${formatBytes(result.originalSize)} ➔ ${formatBytes(result.optimizedSize)} (Hemat ${result.compressionRatio})`
+        `✓ Foto dioptimasi (${formatBytes(result.originalSize)} ➔ ${formatBytes(result.optimizedSize)}) ${isCloud ? '• Tersimpan di Supabase Storage' : ''}`
       );
     } catch (err) {
       console.error(err);
-      setOptimizationStatus('Gagal mengoptimasi foto');
+      setOptimizationStatus('Gagal memproses foto');
     } finally {
       setIsOptimizing(false);
     }
@@ -137,15 +146,18 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
     try {
       setIsOptimizing(true);
-      setOptimizationStatus('Mengompresi foto galeri...');
+      setOptimizationStatus('Mengompresi foto galeri & mengunggah...');
 
       const newPhotos: GalleryPhoto[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const res = await optimizeImage(file, 1000, 1000, 0.82);
+        const photoId = 'photo-' + Date.now() + '-' + i;
+        const uploadedUrl = await uploadImageToSupabaseStorage(res.dataUrl, 'gallery', photoId);
+
         newPhotos.push({
-          id: 'photo-' + Date.now() + '-' + i,
-          url: res.dataUrl,
+          id: photoId,
+          url: uploadedUrl || res.dataUrl,
           caption: 'Foto Kenangan',
           date: new Date().getFullYear().toString()
         });
@@ -156,7 +168,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         gallery: [...(prev.gallery || []), ...newPhotos]
       }));
 
-      setOptimizationStatus(`✓ Berhasil menambahkan ${newPhotos.length} foto beresolusi optimal!`);
+      setOptimizationStatus(`✓ Berhasil menambahkan ${newPhotos.length} foto galeri optimal!`);
     } catch (err) {
       console.error(err);
     } finally {
