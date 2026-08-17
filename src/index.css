@@ -270,22 +270,18 @@ body {
   color: white;
 }
 
-/* Quick Add Button on Hover (Admin) */
+/* Quick Add Buttons in Admin Mode */
 .node-quick-actions {
-  position: absolute;
-  bottom: -28px;
   display: flex;
-  gap: 4px;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: all 0.2s ease;
-  pointer-events: none;
-}
-
-.tree-node-card:hover .node-quick-actions {
-  opacity: 1;
-  transform: translateY(0);
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 2px 4px;
+  z-index: 70;
   pointer-events: auto;
+  transition: all 0.2s ease;
+  animation: fadeIn 0.2s ease;
 }
 
 .quick-action-btn {
@@ -293,18 +289,29 @@ body {
   border: 1px solid var(--border-glass-highlight);
   color: var(--text-gold);
   border-radius: var(--radius-full);
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  display: flex;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   cursor: pointer;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
 }
+
 .quick-action-btn:hover {
   background: var(--accent-gold);
-  color: #000;
+  color: #090d16;
+  border-color: #f59e0b;
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
+}
+
+.quick-action-btn:active {
+  transform: translateY(0) scale(0.95);
 }
 
 /* Level of Detail (LOD) Labels */

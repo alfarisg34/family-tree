@@ -36,7 +36,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
 
   return (
     <div
-      className="tree-node-wrapper"
+      className={`tree-node-wrapper ${isAdmin ? 'admin-mode' : ''}`}
       style={{
         left: `${node.x}px`,
         top: `${node.y}px`,
@@ -133,28 +133,44 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           </div>
         )}
 
+        {/* 3 Quick Admin Add Action Buttons - always stable and accessible */}
         {isAdmin && onQuickAdd && (
-          <div className="node-quick-actions" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="node-quick-actions"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
+              type="button"
               className="quick-action-btn"
-              onClick={() => onQuickAdd(node, 'parent')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickAdd(node, 'parent');
+              }}
               title="Tambah Orang Tua (Ke Atas)"
             >
-              <Plus size={12} /> Ortu
+              <Plus size={13} /> Ortu
             </button>
             <button
+              type="button"
               className="quick-action-btn"
-              onClick={() => onQuickAdd(node, 'spouse')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickAdd(node, 'spouse');
+              }}
               title="Tambah Pasangan (Horizontal)"
             >
-              <Heart size={12} /> Pasangan
+              <Heart size={13} /> Pasangan
             </button>
             <button
+              type="button"
               className="quick-action-btn"
-              onClick={() => onQuickAdd(node, 'child')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickAdd(node, 'child');
+              }}
               title="Tambah Anak (Ke Bawah)"
             >
-              <UserPlus size={12} /> Anak
+              <UserPlus size={13} /> Anak
             </button>
           </div>
         )}
