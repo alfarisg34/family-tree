@@ -667,11 +667,56 @@ body {
   z-index: 30;
   display: flex;
   flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.minimap-pill-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 20px;
+  background: var(--bg-glass-heavy);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-full);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 30;
+  box-shadow: var(--shadow-elevated);
+  backdrop-filter: blur(16px);
+  transition: all 0.2s ease;
+}
+
+.minimap-pill-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+}
+
+.minimap-pill-count {
+  font-size: 9px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
 }
 
 @media (max-width: 640px) {
   .minimap-panel {
-    display: none;
+    bottom: 80px;
+    right: 14px;
+    width: 135px;
+    height: 96px;
+  }
+
+  .minimap-pill-btn {
+    bottom: 80px;
+    right: 14px;
   }
 }
 

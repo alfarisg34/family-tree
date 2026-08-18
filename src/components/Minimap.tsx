@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { TreeLayout, ViewportState } from '../types/family';
-import { Compass } from 'lucide-react';
+import { Compass, ChevronDown } from 'lucide-react';
 
 interface MinimapProps {
   layout: TreeLayout;
@@ -9,9 +9,27 @@ interface MinimapProps {
 }
 
 export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, onNavigate }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const canvasBoxRef = useRef<HTMLDivElement>(null);
+  const [boxSize, setBoxSize] = useState({ width: 168, height: 92 });
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (canvasBoxRef.current) {
+        const rect = canvasBoxRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setBoxSize({ width: rect.width, height: rect.height });
+        }
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [isCollapsed]);
+
   const { nodes, bounds } = layout;
-  const mapW = 168;
-  const mapH = 92;
+  const mapW = boxSize.width || 168;
+  const mapH = boxSize.height || 92;
 
   const minX = bounds.minX;
   const maxX = bounds.maxX;
@@ -49,17 +67,44 @@ export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, onNavigate }
     onNavigate(targetWorldX, targetWorldY);
   };
 
+  if (isCollapsed) {
+    return (
+      <button
+        className="minimap-pill-btn"
+        onClick={() => setIsCollapsed(false)}
+        title="Buka Radar Peta Silsilah"
+      >
+        <Compass size={14} color="var(--accent-gold)" />
+        <span>Radar</span>
+        <span className="minimap-pill-count">{Object.keys(nodes).length}</span>
+      </button>
+    );
+  }
+
   return (
     <div className="minimap-panel">
-      <div className="minimap-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div
+        className="minimap-header"
+        onClick={() => setIsCollapsed(true)}
+        style={{ cursor: 'pointer' }}
+        title="Klik untuk menyembunyikan Radar"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <Compass size={12} color="var(--accent-gold)" />
           <span>Radar Peta</span>
         </div>
-        <span style={{ fontSize: 9 }}>{Object.keys(nodes).length} Jiwa</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 9.5 }}>{Object.keys(nodes).length} Jiwa</span>
+          <ChevronDown size={12} color="var(--text-muted)" />
+        </div>
       </div>
 
-      <div className="minimap-canvas-box" onClick={handleMinimapClick} style={{ cursor: 'crosshair' }}>
+      <div
+        ref={canvasBoxRef}
+        className="minimap-canvas-box"
+        onClick={handleMinimapClick}
+        style={{ cursor: 'crosshair' }}
+      >
         {Object.values(nodes).map((node) => {
           const dotX = (node.x - minX) * mmScale;
           const dotY = (node.y - minY) * mmScale;
@@ -80,8 +125,8 @@ export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, onNavigate }
           style={{
             left: `${vpMmX}px`,
             top: `${vpMmY}px`,
-            width: `${Math.max(16, vpMmW)}px`,
-            height: `${Math.max(12, vpMmH)}px`
+            width: `${Math.max(14, vpMmW)}px`,
+            height: `${Math.max(10, vpMmH)}px`
           }}
         />
       </div>
