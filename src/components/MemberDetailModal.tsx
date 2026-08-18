@@ -627,8 +627,10 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                         <div>
                           <div className="relation-chip-name">{sp.fullName}</div>
                           <div className="relation-chip-role">
-                            {status === 'divorced' || status === 'separated'
+                            {status === 'divorced'
                               ? `💔 Mantan ${sp.gender === 'female' ? 'Istri' : 'Suami'}${divorceDate ? ` (${divorceDate.split('-')[0]})` : ''}`
+                              : status === 'separated'
+                              ? `⚡ Berpisah (${sp.gender === 'female' ? 'Istri' : 'Suami'})`
                               : status === 'widowed'
                               ? `🎗️ ${sp.gender === 'female' ? 'Istri (Almarhumah)' : 'Suami (Almarhum)'}`
                               : `💍 ${sp.gender === 'female' ? 'Istri' : 'Suami'}${marriageDate ? ` (${marriageDate.split('-')[0]})` : ''}`}

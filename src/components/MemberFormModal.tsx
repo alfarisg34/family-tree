@@ -931,8 +931,8 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                           >
                             <option value="married">💍 Menikah</option>
                             <option value="divorced">💔 Bercerai</option>
-                            <option value="separated">Berpisah</option>
-                            <option value="widowed">Pasangan Wafat</option>
+                            <option value="separated">⚡ Berpisah</option>
+                            <option value="widowed">🎗️ Pasangan Wafat</option>
                           </select>
                         </div>
 
