@@ -142,7 +142,6 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 }) => {
   const [expandedDescendantLevel, setExpandedDescendantLevel] = useState<number | null>(null);
   const isDeceased = member.isDeceased;
-  const isAdopted = member.relationshipToParents === 'adopted';
   const ageInfo = calculateAge(member.birthDate, member.isDeceased, member.passedDate);
 
   // Compute all descendants by generational level
@@ -281,9 +280,21 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                   </span>
                 )}
 
-                {isAdopted && (
+                {member.relationshipToParents === 'adopted' && (
                   <span className="badge-tag-status adopted">
                     🌱 Anak Angkat
+                  </span>
+                )}
+
+                {member.relationshipToParents === 'foster' && (
+                  <span className="badge-tag-status adopted" style={{ borderColor: 'rgba(56, 189, 248, 0.4)', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)' }}>
+                    🤝 Anak Asuh
+                  </span>
+                )}
+
+                {member.relationshipToParents === 'step' && (
+                  <span className="badge-tag-status adopted" style={{ borderColor: 'rgba(168, 85, 247, 0.4)', color: '#c084fc', background: 'rgba(168, 85, 247, 0.12)' }}>
+                    🌿 Anak Tiri
                   </span>
                 )}
               </div>
@@ -682,7 +693,13 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                       <div>
                         <div className="relation-chip-name">{ch.fullName}</div>
                         <div className="relation-chip-role">
-                          {ch.relationshipToParents === 'adopted' ? '🌱 Anak Angkat' : 'Anak Kandung'}
+                          {ch.relationshipToParents === 'adopted'
+                            ? '🌱 Anak Angkat'
+                            : ch.relationshipToParents === 'foster'
+                            ? '🤝 Anak Asuh'
+                            : ch.relationshipToParents === 'step'
+                            ? '🌿 Anak Tiri'
+                            : '👶 Anak Kandung'}
                         </div>
                       </div>
                     </div>

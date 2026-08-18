@@ -1079,10 +1079,10 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, relationshipToParents: e.target.value as ParentRelationType })}
                   className="form-select"
                 >
-                  <option value="biological">Anak Kandung (Garis Solid)</option>
+                  <option value="biological">👶 Anak Kandung (Garis Solid)</option>
                   <option value="adopted">🌱 Anak Angkat (Garis Putus-putus Cyan)</option>
-                  <option value="foster">Anak Asuh</option>
-                  <option value="step">Anak Tiri</option>
+                  <option value="foster">🤝 Anak Asuh</option>
+                  <option value="step">🌿 Anak Tiri</option>
                 </select>
               </div>
 
