@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   type FamilyMember,
   type FamilyData,
@@ -25,8 +25,225 @@ import {
   ChevronDown,
   Baby,
   ListOrdered,
-  MessageCircle
+  MessageCircle,
+  Search
 } from 'lucide-react';
+
+interface SearchableMemberTagPickerProps {
+  allMembers: FamilyMember[];
+  selectedMemberIds: string[];
+  onToggleMember: (memberId: string) => void;
+}
+
+const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
+  allMembers,
+  selectedMemberIds,
+  onToggleMember
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const filteredMembers = React.useMemo(() => {
+    if (!searchQuery.trim()) return allMembers;
+    const q = searchQuery.toLowerCase().trim();
+    return allMembers.filter((m) => {
+      return (
+        m.fullName.toLowerCase().includes(q) ||
+        (m.nickname && m.nickname.toLowerCase().includes(q)) ||
+        (m.titlePrefix && m.titlePrefix.toLowerCase().includes(q)) ||
+        (m.titleSuffix && m.titleSuffix.toLowerCase().includes(q))
+      );
+    });
+  }, [allMembers, searchQuery]);
+
+  return (
+    <div style={{ position: 'relative' }} ref={popoverRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          fontSize: 11,
+          background: 'rgba(245, 158, 11, 0.12)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          color: '#fbbf24',
+          padding: '3px 10px',
+          borderRadius: 'var(--radius-full)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 5,
+          cursor: 'pointer',
+          fontWeight: 700,
+          transition: 'all 0.15s ease'
+        }}
+      >
+        <Search size={12} />
+        <span>+ Cari & Tandai Anggota...</span>
+      </button>
+
+      {isOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            right: 0,
+            width: 290,
+            maxHeight: 320,
+            background: '#0f172a',
+            border: '1px solid var(--border-glass-highlight)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(245, 158, 11, 0.15)',
+            zIndex: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            backdropFilter: 'blur(20px)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Search Header */}
+          <div style={{ padding: '8px', borderBottom: '1px solid var(--border-glass)', background: 'rgba(0, 0, 0, 0.3)' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Search size={14} style={{ position: 'absolute', left: 8, color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                autoFocus
+                placeholder="Ketik nama anggota keluarga..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '5px 8px 5px 28px',
+                  fontSize: 12,
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid var(--border-glass)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#fff',
+                  outline: 'none'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: 6,
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontSize: 12
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Members List */}
+          <div style={{ overflowY: 'auto', maxHeight: 230, padding: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {filteredMembers.length === 0 ? (
+              <div style={{ padding: '16px 10px', textAlign: 'center', fontSize: 11.5, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                Tidak ditemukan anggota dengan nama "{searchQuery}"
+              </div>
+            ) : (
+              filteredMembers.map((m) => {
+                const isSelected = selectedMemberIds.includes(m.id);
+
+                return (
+                  <div
+                    key={m.id}
+                    onClick={() => onToggleMember(m.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '6px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      background: isSelected ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                      borderLeft: isSelected ? '3px solid var(--accent-gold)' : '3px solid transparent',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      <img
+                        src={m.avatar}
+                        alt={m.fullName}
+                        style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-glass)' }}
+                      />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {formatMemberFullName(m)}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+                          {m.nickname ? `"${m.nickname}" • ` : ''}Gen {m.generation}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginLeft: 8, flexShrink: 0 }}>
+                      {isSelected ? (
+                        <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <CheckCircle2 size={14} />
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>+ Tag</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{ padding: '6px 8px', borderTop: '1px solid var(--border-glass)', background: 'rgba(0, 0, 0, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+              {selectedMemberIds.length} anggota ditandai
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              style={{
+                fontSize: 11,
+                background: 'rgba(245, 158, 11, 0.2)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                color: '#fbbf24',
+                padding: '2px 8px',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer',
+                fontWeight: 700
+              }}
+            >
+              Selesai
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface MemberFormModalProps {
   initialMember?: Partial<FamilyMember> | null;
@@ -1213,30 +1430,16 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
                       {/* Tagging Family Members */}
                       <div style={{ background: 'rgba(0,0,0,0.25)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
                           <span style={{ fontSize: 10.5, color: 'var(--text-gold)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            🏷️ Tandai Anggota di Foto Ini ({p.taggedMemberIds?.length || 0}):
+                            🏷️ Anggota di Foto Ini ({p.taggedMemberIds?.length || 0}):
                           </span>
 
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                handleToggleTagMemberInPhoto(p.id, e.target.value);
-                              }
-                            }}
-                            className="form-select"
-                            style={{ fontSize: 11, padding: '2px 8px', height: 24, background: 'rgba(15, 23, 42, 0.9)', width: 'auto', maxWidth: 220 }}
-                          >
-                            <option value="">+ Tandai Anggota Lain...</option>
-                            {allOtherMembers
-                              .filter((m) => !(p.taggedMemberIds || []).includes(m.id))
-                              .map((m) => (
-                                <option key={m.id} value={m.id}>
-                                  👤 {formatMemberFullName(m)} {m.nickname ? `("${m.nickname}")` : ''}
-                                </option>
-                              ))}
-                          </select>
+                          <SearchableMemberTagPicker
+                            allMembers={allOtherMembers}
+                            selectedMemberIds={p.taggedMemberIds || []}
+                            onToggleMember={(mId) => handleToggleTagMemberInPhoto(p.id, mId)}
+                          />
                         </div>
 
                         {/* Tagged Chips */}
