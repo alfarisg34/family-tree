@@ -262,6 +262,24 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     }));
   };
 
+  const handleToggleTagMemberInPhoto = (photoId: string, memberId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      gallery: (prev.gallery || []).map((p) => {
+        if (p.id !== photoId) return p;
+        const currentTags = p.taggedMemberIds || [];
+        const isTagged = currentTags.includes(memberId);
+        const updatedTags = isTagged
+          ? currentTags.filter((id) => id !== memberId)
+          : [...currentTags, memberId];
+        return {
+          ...p,
+          taggedMemberIds: updatedTags
+        };
+      })
+    }));
+  };
+
   const handleRemoveGalleryPhoto = (photoId: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -1161,34 +1179,114 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       <img src={p.url} alt="Galeri" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
 
-                    {/* Inputs */}
-                    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, minWidth: 0 }}>
-                      <div className="form-group">
-                        <label style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                          Keterangan / Momen Foto
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Contoh: Momen Wisuda S1 / Liburan Keluarga"
-                          value={p.caption || ''}
-                          onChange={(e) => handleUpdateGalleryPhoto(p.id, 'caption', e.target.value)}
-                          className="form-input"
-                          style={{ padding: '6px 10px', fontSize: 12 }}
-                        />
+                    {/* Inputs and Member Tagging */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
+                        <div className="form-group">
+                          <label style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                            Keterangan / Momen Foto
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Momen Wisuda S1 / Liburan Keluarga"
+                            value={p.caption || ''}
+                            onChange={(e) => handleUpdateGalleryPhoto(p.id, 'caption', e.target.value)}
+                            className="form-input"
+                            style={{ padding: '6px 10px', fontSize: 12 }}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                            Tahun / Tanggal (Opsional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: 2024 / Kosongkan"
+                            value={p.date || ''}
+                            onChange={(e) => handleUpdateGalleryPhoto(p.id, 'date', e.target.value)}
+                            className="form-input"
+                            style={{ padding: '6px 10px', fontSize: 12 }}
+                          />
+                        </div>
                       </div>
 
-                      <div className="form-group">
-                        <label style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                          Tahun / Tanggal (Opsional)
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Contoh: 2024 / Kosongkan"
-                          value={p.date || ''}
-                          onChange={(e) => handleUpdateGalleryPhoto(p.id, 'date', e.target.value)}
-                          className="form-input"
-                          style={{ padding: '6px 10px', fontSize: 12 }}
-                        />
+                      {/* Tagging Family Members */}
+                      <div style={{ background: 'rgba(0,0,0,0.25)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
+                          <span style={{ fontSize: 10.5, color: 'var(--text-gold)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            🏷️ Tandai Anggota di Foto Ini ({p.taggedMemberIds?.length || 0}):
+                          </span>
+
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                handleToggleTagMemberInPhoto(p.id, e.target.value);
+                              }
+                            }}
+                            className="form-select"
+                            style={{ fontSize: 11, padding: '2px 8px', height: 24, background: 'rgba(15, 23, 42, 0.9)', width: 'auto', maxWidth: 220 }}
+                          >
+                            <option value="">+ Tandai Anggota Lain...</option>
+                            {allOtherMembers
+                              .filter((m) => !(p.taggedMemberIds || []).includes(m.id))
+                              .map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  👤 {formatMemberFullName(m)} {m.nickname ? `("${m.nickname}")` : ''}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        {/* Tagged Chips */}
+                        {p.taggedMemberIds && p.taggedMemberIds.length > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                            {p.taggedMemberIds.map((tagId) => {
+                              const taggedMember = familyData.members[tagId];
+                              if (!taggedMember) return null;
+                              return (
+                                <span
+                                  key={tagId}
+                                  style={{
+                                    fontSize: 10.5,
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                                    color: '#fbbf24',
+                                    padding: '2px 7px',
+                                    borderRadius: 'var(--radius-full)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5
+                                  }}
+                                >
+                                  <span>👤 {taggedMember.nickname || taggedMember.fullName.split(' ')[0]}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleTagMemberInPhoto(p.id, tagId)}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: '#f87171',
+                                      cursor: 'pointer',
+                                      padding: 0,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      lineHeight: 1
+                                    }}
+                                    title="Hapus tag"
+                                  >
+                                    ✕
+                                  </button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            Belum ada anggota yang ditandai. Foto ini juga akan otomatis muncul di galeri anggota yang Anda tandai.
+                          </div>
+                        )}
                       </div>
                     </div>
 

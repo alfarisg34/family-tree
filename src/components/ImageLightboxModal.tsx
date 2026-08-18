@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { GalleryPhoto } from '../types/family';
+import type { GalleryPhoto, FamilyMember } from '../types/family';
 
 interface ImageLightboxModalProps {
   photos: GalleryPhoto[];
   initialIndex?: number;
   isOpen: boolean;
+  familyMembers?: Record<string, FamilyMember>;
+  onSelectMember?: (memberId: string) => void;
   onClose: () => void;
 }
 
@@ -13,6 +15,8 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
   photos,
   initialIndex = 0,
   isOpen,
+  familyMembers,
+  onSelectMember,
   onClose
 }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -164,19 +168,57 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            maxWidth: 'calc(100vw - 220px)',
+            overflow: 'hidden'
           }}
         >
-          <span style={{ fontWeight: 700, color: 'var(--text-gold)' }}>
+          <span style={{ fontWeight: 700, color: 'var(--text-gold)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {currentPhoto.caption || 'Foto Kenangan'}
           </span>
           {currentPhoto.date && (
-            <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: 12, whiteSpace: 'nowrap' }}>
               ({currentPhoto.date})
             </span>
           )}
+
+          {/* Tagged members chips in lightbox */}
+          {currentPhoto.taggedMemberIds && currentPhoto.taggedMemberIds.length > 0 && familyMembers && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, borderLeft: '1px solid var(--border-glass)', paddingLeft: 10, overflow: 'hidden' }}>
+              {currentPhoto.taggedMemberIds.map((tagId) => {
+                const taggedMember = familyMembers[tagId];
+                if (!taggedMember) return null;
+                return (
+                  <span
+                    key={tagId}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectMember) {
+                        onClose();
+                        onSelectMember(tagId);
+                      }
+                    }}
+                    style={{
+                      fontSize: 11,
+                      background: 'rgba(245, 158, 11, 0.2)',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      color: '#fbbf24',
+                      padding: '2px 7px',
+                      borderRadius: 'var(--radius-full)',
+                      cursor: onSelectMember ? 'pointer' : 'default',
+                      whiteSpace: 'nowrap'
+                    }}
+                    title={`Lihat profil ${taggedMember.fullName}`}
+                  >
+                    👤 {taggedMember.nickname || taggedMember.fullName.split(' ')[0]}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           {photos.length > 1 && (
-            <span style={{ color: 'var(--text-muted)', fontSize: 11, borderLeft: '1px solid var(--border-glass)', paddingLeft: 10 }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: 11, borderLeft: '1px solid var(--border-glass)', paddingLeft: 10, whiteSpace: 'nowrap' }}>
               {currentIndex + 1} / {photos.length}
             </span>
           )}

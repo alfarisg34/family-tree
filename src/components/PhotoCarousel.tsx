@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, Maximize2 } from 'lucide-react';
-import type { GalleryPhoto } from '../types/family';
+import type { GalleryPhoto, FamilyMember } from '../types/family';
 import { ImageLightboxModal } from './ImageLightboxModal';
 
 interface PhotoCarouselProps {
   photos: GalleryPhoto[];
   defaultAvatar?: string;
   isDeceased?: boolean;
+  familyMembers?: Record<string, FamilyMember>;
+  onSelectMember?: (memberId: string) => void;
 }
 
 export const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
   photos,
   defaultAvatar,
-  isDeceased = false
+  isDeceased = false,
+  familyMembers,
+  onSelectMember
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -76,6 +80,56 @@ export const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
             <span>Perbesar Foto</span>
           </div>
 
+          {/* Tagged members in this photo */}
+          {currentPhoto.taggedMemberIds && currentPhoto.taggedMemberIds.length > 0 && familyMembers && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                flexWrap: 'wrap',
+                zIndex: 10,
+                maxWidth: 'calc(100% - 130px)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {currentPhoto.taggedMemberIds.map((tagId) => {
+                const taggedMember = familyMembers[tagId];
+                if (!taggedMember) return null;
+                return (
+                  <span
+                    key={tagId}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectMember) onSelectMember(tagId);
+                    }}
+                    style={{
+                      fontSize: 10.5,
+                      background: 'rgba(15, 23, 42, 0.88)',
+                      border: '1px solid var(--border-glass)',
+                      backdropFilter: 'blur(8px)',
+                      color: '#fbbf24',
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      cursor: onSelectMember ? 'pointer' : 'default',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={`Lihat profil ${taggedMember.fullName}`}
+                  >
+                    <span>👤 {taggedMember.nickname || taggedMember.fullName.split(' ')[0]}</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           {(Boolean(currentPhoto.caption && currentPhoto.caption.trim()) || Boolean(currentPhoto.date && currentPhoto.date.trim())) && (
             <div className="carousel-caption-bar">
               {currentPhoto.caption && currentPhoto.caption.trim() && (
@@ -136,6 +190,8 @@ export const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
         isOpen={isLightboxOpen}
         photos={allImages}
         initialIndex={currentIndex}
+        familyMembers={familyMembers}
+        onSelectMember={onSelectMember}
         onClose={() => setIsLightboxOpen(false)}
       />
     </>

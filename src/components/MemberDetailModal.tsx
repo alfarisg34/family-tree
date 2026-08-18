@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   type FamilyMember,
   type FamilyData,
+  type GalleryPhoto,
   formatMemberFullName
 } from '../types/family';
 import { PhotoCarousel } from './PhotoCarousel';
@@ -190,6 +191,46 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     if (!member.parentIds || member.parentIds.length === 0) return false;
     return m.parentIds && m.parentIds.some((pId) => member.parentIds.includes(pId));
   });
+
+  // Find all photos associated with this member:
+  // 1. Direct gallery photos uploaded for this member
+  // 2. Photos uploaded by other members where this member is tagged
+  const allAssociatedPhotos = useMemo(() => {
+    const photosList: GalleryPhoto[] = [];
+    const seenUrls = new Set<string>();
+
+    // 1. Direct gallery photos
+    (member.gallery || []).forEach((p) => {
+      if (p.url && !seenUrls.has(p.url)) {
+        seenUrls.add(p.url);
+        photosList.push(p);
+      }
+    });
+
+    // 2. Photos from other family members with member.id tagged
+    Object.values(familyData.members).forEach((otherMember) => {
+      if (otherMember.id !== member.id && otherMember.gallery) {
+        otherMember.gallery.forEach((otherPhoto) => {
+          if (
+            otherPhoto.url &&
+            !seenUrls.has(otherPhoto.url) &&
+            otherPhoto.taggedMemberIds &&
+            otherPhoto.taggedMemberIds.includes(member.id)
+          ) {
+            seenUrls.add(otherPhoto.url);
+            photosList.push({
+              ...otherPhoto,
+              caption: otherPhoto.caption
+                ? otherPhoto.caption
+                : `Foto bersama ${otherMember.nickname || otherMember.fullName.split(' ')[0]}`
+            });
+          }
+        });
+      }
+    });
+
+    return photosList;
+  }, [member, familyData.members]);
 
   // Find children
   const children = Object.values(familyData.members).filter(
@@ -407,17 +448,19 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           )}
 
           {/* Karosel Galeri Foto Kenangan & Foto Profil */}
-          {(Boolean(member.avatar) || Boolean(member.gallery && member.gallery.length > 0)) && (
+          {(Boolean(member.avatar) || allAssociatedPhotos.length > 0) && (
             <div>
               <div className="attribute-label" style={{ marginBottom: 8 }}>
-                {member.gallery && member.gallery.length > 0
-                  ? `Galeri Kenangan (${member.gallery.length + (member.avatar ? 1 : 0)} Foto)`
+                {allAssociatedPhotos.length > 0
+                  ? `Galeri Kenangan (${allAssociatedPhotos.length + (member.avatar ? 1 : 0)} Foto)`
                   : 'Dokumentasi Foto Profil (1 Foto)'}
               </div>
               <PhotoCarousel
-                photos={member.gallery || []}
+                photos={allAssociatedPhotos}
                 defaultAvatar={member.avatar}
                 isDeceased={isDeceased}
+                familyMembers={familyData.members}
+                onSelectMember={onSelectMember}
               />
             </div>
           )}

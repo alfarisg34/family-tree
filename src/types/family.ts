@@ -21,6 +21,7 @@ export interface GalleryPhoto {
   url: string;
   caption?: string;
   date?: string;
+  taggedMemberIds?: string[];
 }
 
 export interface FamilyMember {
