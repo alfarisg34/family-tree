@@ -43,14 +43,14 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   };
 
   // Progressive generation visibility threshold based on zoom scale:
-  // scale < 0.42  -> Gen 1 & 2 only (ancestor overview)
-  // scale < 0.62  -> Gen 1, 2, 3 (grandparents)
-  // scale < 0.85  -> Gen 1, 2, 3, 4 (parents & uncles)
-  // scale >= 0.85 -> All generations (children, grandchildren, etc.)
+  // scale < 0.35  -> Gen 1 & 2 only (ancestor overview)
+  // scale < 0.48  -> Gen 1, 2, 3 (grandparents)
+  // scale < 0.62  -> Gen 1, 2, 3, 4 (parents & uncles)
+  // scale >= 0.62 -> All generations (Gen 5, 6, 7+ children, grandchildren, etc.)
   const getMaxVisibleGeneration = (scale: number): number => {
-    if (scale < 0.42) return 2;
-    if (scale < 0.62) return 3;
-    if (scale < 0.85) return 4;
+    if (scale < 0.35) return 2;
+    if (scale < 0.48) return 3;
+    if (scale < 0.62) return 4;
     return Infinity;
   };
 
