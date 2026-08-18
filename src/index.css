@@ -708,63 +708,10 @@ body {
   border-radius: var(--radius-full);
 }
 
-@media (max-width: 640px) {
-  .floating-controls-panel {
-    bottom: max(16px, env(safe-area-inset-bottom, 16px));
-    left: 12px;
-    gap: 4px;
-  }
-
-  .control-btn-group {
-    padding: 2px;
-    gap: 1px;
-    border-radius: var(--radius-md);
-  }
-
-  .control-icon-btn {
-    width: 32px;
-    height: 32px;
-  }
-
-  .control-zoom-indicator {
-    font-size: 8.5px;
-    font-weight: 700;
-    padding: 1px 0;
-  }
-
-  .legend-title-full {
-    display: none;
-  }
-  .legend-title-short {
-    display: inline;
-  }
-
-  .map-legend-drawer {
-    bottom: max(16px, env(safe-area-inset-bottom, 16px));
-    left: 54px;
-    min-width: unset;
-    padding: 6px 12px;
-    border-radius: var(--radius-full);
-  }
-
-  .minimap-panel {
-    bottom: max(64px, calc(env(safe-area-inset-bottom, 16px) + 48px));
-    right: 12px;
-    width: 130px;
-    height: 90px;
-  }
-
-  .minimap-pill-btn {
-    bottom: max(16px, env(safe-area-inset-bottom, 16px));
-    right: 12px;
-    padding: 5px 10px;
-    font-size: 10.5px;
-  }
-}
-
 .legend-title-short {
   display: none;
 }
+
 .legend-title-full {
   display: inline;
 }
@@ -826,6 +773,76 @@ body {
   gap: 10px;
   min-width: 240px;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.map-legend-drawer.is-collapsed {
+  min-width: unset;
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+}
+
+@media (max-width: 640px) {
+  .floating-controls-panel {
+    bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    left: 10px;
+    gap: 4px;
+  }
+
+  .control-btn-group {
+    padding: 2px;
+    gap: 1px;
+    border-radius: var(--radius-md);
+  }
+
+  .control-icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .control-zoom-indicator {
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1px 0;
+  }
+
+  .legend-title-full {
+    display: none !important;
+  }
+
+  .legend-title-short {
+    display: inline !important;
+  }
+
+  .map-legend-drawer {
+    bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    left: 48px;
+    min-width: unset !important;
+    max-width: calc(100vw - 150px);
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+  }
+
+  .map-legend-drawer.is-open {
+    border-radius: var(--radius-md);
+    min-width: 240px !important;
+    max-width: calc(100vw - 24px);
+    left: 10px;
+    bottom: max(56px, calc(env(safe-area-inset-bottom, 14px) + 44px));
+  }
+
+  .minimap-panel {
+    bottom: max(56px, calc(env(safe-area-inset-bottom, 14px) + 44px));
+    right: 10px;
+    width: 130px;
+    height: 90px;
+  }
+
+  .minimap-pill-btn {
+    bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    right: 10px;
+    padding: 6px 10px;
+    font-size: 10px;
+  }
 }
 
 .map-legend-title {

@@ -6,7 +6,7 @@ export const LegendPanel: React.FC = () => {
 
   return (
     <div
-      className="map-legend-drawer"
+      className={`map-legend-drawer ${isOpen ? 'is-open' : 'is-collapsed'}`}
       style={{
         width: isOpen ? 270 : 'auto',
         cursor: isOpen ? 'default' : 'pointer'
