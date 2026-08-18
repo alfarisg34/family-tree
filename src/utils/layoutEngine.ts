@@ -204,20 +204,135 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
       return (primaryA.order || 1) - (primaryB.order || 1);
     });
 
-    let totalGenWidth = 0;
-    const unitWidths = units.map(u => {
-      const uWidth = u.length * NODE_SIZE + (u.length - 1) * SPOUSE_GAP;
-      totalGenWidth += uWidth;
-      return uWidth;
+    // Data structure for layout units within a generation
+    interface UnitLayout {
+      unit: FamilyMember[];
+      width: number;
+      placedLeft: number;
+      targetCenter: number;
+      parentKey: string;
+    }
+
+    const unitLayouts: UnitLayout[] = units.map(unit => {
+      const uWidth = unit.length * NODE_SIZE + (unit.length - 1) * SPOUSE_GAP;
+
+      // Identify parents of this unit
+      let parentKey = 'none';
+      let parentCenterSum = 0;
+      let parentCount = 0;
+
+      unit.forEach(m => {
+        if (m.parentIds && m.parentIds.length > 0) {
+          parentKey = [...m.parentIds].sort().join('---');
+          m.parentIds.forEach(pId => {
+            if (nodes[pId]) {
+              parentCenterSum += nodes[pId].x;
+              parentCount++;
+            }
+          });
+        }
+      });
+
+      const targetCenter = parentCount > 0 ? parentCenterSum / parentCount : 600;
+
+      return {
+        unit,
+        width: uWidth,
+        placedLeft: targetCenter - uWidth / 2,
+        targetCenter,
+        parentKey
+      };
     });
 
-    totalGenWidth += Math.max(0, units.length - 1) * HORIZONTAL_GAP;
+    if (gen === 1) {
+      // Root generation: distribute centered around 600
+      let totalGenWidth = 0;
+      unitLayouts.forEach(u => {
+        totalGenWidth += u.width;
+      });
+      totalGenWidth += Math.max(0, unitLayouts.length - 1) * HORIZONTAL_GAP;
 
-    let currentX = 600 - totalGenWidth / 2;
+      let startX = 600 - totalGenWidth / 2;
+      unitLayouts.forEach(u => {
+        u.placedLeft = startX;
+        startX += u.width + HORIZONTAL_GAP;
+      });
+    } else {
+      // Group units by their common parents
+      const siblingGroups = new Map<string, UnitLayout[]>();
+      unitLayouts.forEach(u => {
+        if (!siblingGroups.has(u.parentKey)) {
+          siblingGroups.set(u.parentKey, []);
+        }
+        siblingGroups.get(u.parentKey)!.push(u);
+      });
 
-    units.forEach((unit, uIdx) => {
-      unit.forEach((m, mIdx) => {
-        const x = currentX + mIdx * (NODE_SIZE + SPOUSE_GAP) + NODE_SIZE / 2;
+      // Position each sibling cluster centered directly under their parent midpoint
+      siblingGroups.forEach((group, parentKey) => {
+        let totalClusterWidth = 0;
+        group.forEach(u => {
+          totalClusterWidth += u.width;
+        });
+        totalClusterWidth += Math.max(0, group.length - 1) * HORIZONTAL_GAP;
+
+        const pIds = parentKey.split('---');
+        const pNodes = pIds.map(id => nodes[id]).filter(Boolean);
+        const parentMid = pNodes.length >= 2 
+          ? (pNodes[0].x + pNodes[1].x) / 2 
+          : pNodes.length === 1 
+          ? pNodes[0].x 
+          : 600;
+
+        let clusterLeft = parentMid - totalClusterWidth / 2;
+        group.forEach(u => {
+          u.placedLeft = clusterLeft;
+          clusterLeft += u.width + HORIZONTAL_GAP;
+        });
+      });
+
+      // Left-to-right pass to eliminate overlap between adjacent sibling clusters
+      for (let i = 1; i < unitLayouts.length; i++) {
+        const prev = unitLayouts[i - 1];
+        const curr = unitLayouts[i];
+        const minLeft = prev.placedLeft + prev.width + HORIZONTAL_GAP;
+        if (curr.placedLeft < minLeft) {
+          const shift = minLeft - curr.placedLeft;
+          // If this unit shifted, shift all subsequent units in the row
+          for (let k = i; k < unitLayouts.length; k++) {
+            unitLayouts[k].placedLeft += shift;
+          }
+        }
+      }
+
+      // Re-center parent nodes if their children cluster expanded wider than them
+      siblingGroups.forEach((group, parentKey) => {
+        if (parentKey === 'none') return;
+        const pIds = parentKey.split('---');
+        const pNodes = pIds.map(id => nodes[id]).filter(Boolean);
+        if (pNodes.length === 0) return;
+
+        const clusterMinX = group[0].placedLeft;
+        const clusterMaxX = group[group.length - 1].placedLeft + group[group.length - 1].width;
+        const clusterMidX = (clusterMinX + clusterMaxX) / 2;
+
+        const currentParentMidX = pNodes.length >= 2
+          ? (pNodes[0].x + pNodes[1].x) / 2
+          : pNodes[0].x;
+
+        const delta = clusterMidX - currentParentMidX;
+        if (Math.abs(delta) > 5) {
+          pNodes.forEach(pn => {
+            pn.x += delta;
+          });
+        }
+      });
+    }
+
+    // Place actual nodes in world coordinates
+    unitLayouts.forEach(({ unit, placedLeft }) => {
+      let mLeft = placedLeft;
+      unit.forEach((m) => {
+        const x = mLeft + NODE_SIZE / 2;
         const totalDesc = countDescendants(m.id);
         
         nodes[m.id] = {
@@ -232,10 +347,33 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
           totalDescendants: totalDesc,
           spouses: []
         };
-      });
 
-      currentX += unitWidths[uIdx] + HORIZONTAL_GAP;
+        mLeft += NODE_SIZE + SPOUSE_GAP;
+      });
     });
+  });
+
+  // Post-processing adjustment: resolve any upper-generation node overlaps caused by expanding child clusters
+  sortedGenerations.forEach(gen => {
+    const genNodes = Object.values(nodes)
+      .filter(n => (effectiveGenMap.get(n.id) || n.generation) === gen)
+      .sort((a, b) => a.x - b.x);
+
+    for (let i = 1; i < genNodes.length; i++) {
+      const prev = genNodes[i - 1];
+      const curr = genNodes[i];
+      // If they are spouses, minimum gap is NODE_SIZE + SPOUSE_GAP
+      // If they are siblings/different families, minimum gap is NODE_SIZE + HORIZONTAL_GAP
+      const isSpouse = prev.member.spouses && prev.member.spouses.some(s => s.spouseId === curr.id);
+      const minDistance = isSpouse ? (NODE_SIZE + SPOUSE_GAP) : (NODE_SIZE + HORIZONTAL_GAP);
+
+      if (curr.x - prev.x < minDistance) {
+        const pushX = minDistance - (curr.x - prev.x);
+        for (let k = i; k < genNodes.length; k++) {
+          genNodes[k].x += pushX;
+        }
+      }
+    }
   });
 
   // 3. Calculate straight vertical column X on the far left of the entire tree
