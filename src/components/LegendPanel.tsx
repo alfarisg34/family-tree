@@ -24,8 +24,9 @@ export const LegendPanel: React.FC = () => {
         style={{ cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Info size={15} />
-          <span>Panduan Garis & Simbol</span>
+          <Info size={15} color="var(--accent-gold)" />
+          <span className="legend-title-full">Panduan Garis & Simbol</span>
+          <span className="legend-title-short">Panduan</span>
         </div>
         {isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
       </div>

@@ -732,9 +732,16 @@ body {
     padding: 1px 0;
   }
 
+  .legend-title-full {
+    display: none;
+  }
+  .legend-title-short {
+    display: inline;
+  }
+
   .map-legend-drawer {
     bottom: max(16px, env(safe-area-inset-bottom, 16px));
-    left: 52px;
+    left: 54px;
     min-width: unset;
     padding: 6px 12px;
     border-radius: var(--radius-full);
@@ -753,6 +760,13 @@ body {
     padding: 5px 10px;
     font-size: 10.5px;
   }
+}
+
+.legend-title-short {
+  display: none;
+}
+.legend-title-full {
+  display: inline;
 }
 
 .minimap-header {
