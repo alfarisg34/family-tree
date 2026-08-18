@@ -10,7 +10,7 @@ import {
   formatMemberFullName
 } from '../types/family';
 import { uploadImageToSupabaseStorage } from '../services/supabaseService';
-import { optimizeImage, formatBytes } from '../utils/imageOptimizer';
+import { optimizeImage } from '../utils/imageOptimizer';
 import { getWhatsAppUrl } from '../utils/dateUtils';
 import {
   X,
@@ -26,8 +26,10 @@ import {
   Baby,
   ListOrdered,
   MessageCircle,
-  Search
+  Search,
+  Scissors
 } from 'lucide-react';
+import { ImageCropModal } from './ImageCropModal';
 
 interface SearchableMemberTagPickerProps {
   allMembers: FamilyMember[];
@@ -389,6 +391,22 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Crop & Adjust Modal State
+  const [cropModalState, setCropModalState] = useState<{
+    isOpen: boolean;
+    imageUrl: string;
+    target: 'avatar' | { type: 'gallery'; photoId: string };
+    cropShape: 'circle' | 'rect';
+    rectAspectRatio?: number;
+    title: string;
+  }>({
+    isOpen: false,
+    imageUrl: '',
+    target: 'avatar',
+    cropShape: 'circle',
+    title: 'Sesuaikan & Potong Foto Profil'
+  });
+
   // Translate Indonesian relation titles
   const getRelationDirectionTitle = () => {
     switch (relationDirection) {
@@ -400,37 +418,106 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     }
   };
 
-  // Automatic photo compression on device + Supabase Storage upload
-  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Avatar file selection -> Opens Crop & Adjust modal for instant preview & framing
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    try {
-      setIsOptimizing(true);
-      setOptimizationStatus('Mengompresi foto & mengunggah ke Supabase...');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setCropModalState({
+          isOpen: true,
+          imageUrl: dataUrl,
+          target: 'avatar',
+          cropShape: 'circle',
+          title: 'Sesuaikan & Potong Foto Profil Utama'
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
-      const result = await optimizeImage(file, 600, 600, 0.82);
-      
-      const finalUrl = await uploadImageToSupabaseStorage(
-        result.dataUrl,
-        'avatars',
-        formData.id || 'avatar'
-      );
-      
-      setFormData((prev) => ({
-        ...prev,
-        avatar: finalUrl || result.dataUrl
-      }));
+  // Open cropper for existing avatar
+  const handleOpenCropForExistingAvatar = () => {
+    if (!formData.avatar) return;
+    setCropModalState({
+      isOpen: true,
+      imageUrl: formData.avatar,
+      target: 'avatar',
+      cropShape: 'circle',
+      title: 'Sesuaikan & Potong Foto Profil Utama'
+    });
+  };
 
-      const isCloud = finalUrl && finalUrl.startsWith('http') && !finalUrl.startsWith('data:');
-      setOptimizationStatus(
-        `✓ Foto dioptimasi (${formatBytes(result.originalSize)} ➔ ${formatBytes(result.optimizedSize)}) ${isCloud ? '• Tersimpan di Supabase Storage' : ''}`
-      );
-    } catch (err) {
-      console.error(err);
-      setOptimizationStatus('Gagal memproses foto');
-    } finally {
-      setIsOptimizing(false);
+  // Open cropper for gallery photo
+  const handleOpenCropForGalleryPhoto = (photo: GalleryPhoto) => {
+    setCropModalState({
+      isOpen: true,
+      imageUrl: photo.url,
+      target: { type: 'gallery', photoId: photo.id },
+      cropShape: 'rect',
+      rectAspectRatio: 1.5,
+      title: `Sesuaikan & Crop Foto Galeri (${photo.caption || 'Foto Kenangan'})`
+    });
+  };
+
+  // Apply cropped result (Avatar or Gallery)
+  const handleApplyCroppedImage = async (croppedDataUrl: string) => {
+    if (cropModalState.target === 'avatar') {
+      try {
+        setIsOptimizing(true);
+        setOptimizationStatus('Mengunggah foto profil...');
+
+        const finalUrl = await uploadImageToSupabaseStorage(
+          croppedDataUrl,
+          'avatars',
+          formData.id || 'avatar'
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          avatar: finalUrl || croppedDataUrl
+        }));
+
+        const isCloud = finalUrl && finalUrl.startsWith('http') && !finalUrl.startsWith('data:');
+        setOptimizationStatus(
+          `✓ Foto profil diperbarui ${isCloud ? '• Tersimpan di Supabase Storage' : ''}`
+        );
+      } catch (err) {
+        console.error(err);
+        setOptimizationStatus('Gagal memproses foto profil');
+      } finally {
+        setIsOptimizing(false);
+      }
+    } else if (typeof cropModalState.target === 'object' && cropModalState.target.type === 'gallery') {
+      const photoId = cropModalState.target.photoId;
+      try {
+        setIsOptimizing(true);
+        setOptimizationStatus('Menyimpan hasil penyesuaian foto galeri...');
+
+        const finalUrl = await uploadImageToSupabaseStorage(
+          croppedDataUrl,
+          'gallery',
+          photoId
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          gallery: (prev.gallery || []).map((p) =>
+            p.id === photoId ? { ...p, url: finalUrl || croppedDataUrl } : p
+          )
+        }));
+
+        setOptimizationStatus('✓ Foto galeri berhasil disesuaikan & diperbarui!');
+      } catch (err) {
+        console.error(err);
+        setOptimizationStatus('Gagal memproses foto galeri');
+      } finally {
+        setIsOptimizing(false);
+      }
     }
   };
 
@@ -663,6 +750,18 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 >
                   <Upload size={14} /> Pilih Foto dari Perangkat
                 </button>
+
+                {Boolean(formData.avatar) && (
+                  <button
+                    type="button"
+                    className="btn-nav-glass"
+                    onClick={handleOpenCropForExistingAvatar}
+                    style={{ color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.4)' }}
+                    title="Sesuaikan posisi, zoom & rotasi foto profil"
+                  >
+                    <Scissors size={14} /> Crop & Sesuaikan
+                  </button>
+                )}
 
                 <input
                   type="text"
@@ -1391,9 +1490,31 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       border: '1px solid var(--border-glass)'
                     }}
                   >
-                    {/* Thumbnail Image */}
-                    <div style={{ width: 56, height: 56, borderRadius: 'var(--radius-sm)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border-glass)' }}>
-                      <img src={p.url} alt="Galeri" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {/* Thumbnail & Quick Crop */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 60, height: 60, borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-glass)', position: 'relative' }}>
+                        <img src={p.url} alt="Galeri" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenCropForGalleryPhoto(p)}
+                        style={{
+                          fontSize: 10.5,
+                          background: 'rgba(245, 158, 11, 0.15)',
+                          border: '1px solid rgba(245, 158, 11, 0.35)',
+                          color: '#fbbf24',
+                          padding: '2px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontWeight: 700
+                        }}
+                        title="Sesuaikan posisi, zoom & crop foto galeri ini"
+                      >
+                        <Scissors size={11} /> Crop
+                      </button>
                     </div>
 
                     {/* Inputs and Member Tagging */}
@@ -1529,6 +1650,17 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Image Crop & Adjust Modal */}
+      <ImageCropModal
+        isOpen={cropModalState.isOpen}
+        imageUrl={cropModalState.imageUrl}
+        cropShape={cropModalState.cropShape}
+        rectAspectRatio={cropModalState.rectAspectRatio}
+        title={cropModalState.title}
+        onSave={handleApplyCroppedImage}
+        onClose={() => setCropModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };
