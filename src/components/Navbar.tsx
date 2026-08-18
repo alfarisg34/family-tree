@@ -37,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [isTreeSwitcherOpen, setIsTreeSwitcherOpen] = useState(false);
   
   const searchRef = useRef<HTMLDivElement | null>(null);
@@ -56,6 +57,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   }).slice(0, 6);
 
   useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setIsSearchOpen(false);
@@ -72,6 +77,30 @@ export const Navbar: React.FC<NavbarProps> = ({
     setSearchQuery('');
     setIsSearchOpen(false);
     onFlyToMember(m.id);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isSearchOpen || searchResults.length === 0) return;
+
+    if (e.key === 'Tab' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        setSelectedIndex((prev) => (prev <= 0 ? searchResults.length - 1 : prev - 1));
+      } else {
+        setSelectedIndex((prev) => (prev + 1) % searchResults.length);
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev <= 0 ? searchResults.length - 1 : prev - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const target = searchResults[selectedIndex] || searchResults[0];
+      if (target) {
+        handleSelectSearchResult(target);
+      }
+    } else if (e.key === 'Escape') {
+      setIsSearchOpen(false);
+    }
   };
 
   const handleCreateNewTree = () => {
@@ -228,6 +257,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             setIsSearchOpen(true);
           }}
           onFocus={() => setIsSearchOpen(true)}
+          onKeyDown={handleSearchKeyDown}
           className="search-input"
         />
 
@@ -247,43 +277,52 @@ export const Navbar: React.FC<NavbarProps> = ({
               backdropFilter: 'blur(16px)'
             }}
           >
-            {searchResults.map((m) => (
-              <div
-                key={m.id}
-                onClick={() => handleSelectSearchResult(m)}
-                style={{
-                  padding: '10px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  cursor: 'pointer',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                  transition: 'background 0.15s ease'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.12)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <img
-                  src={m.avatar}
-                  alt={m.fullName}
+            {searchResults.map((m, idx) => {
+              const isHighlighted = idx === selectedIndex;
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => handleSelectSearchResult(m)}
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    filter: m.isDeceased ? 'var(--sepia-filter)' : undefined
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    cursor: 'pointer',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    background: isHighlighted ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+                    borderLeft: isHighlighted ? '3px solid var(--accent-gold)' : '3px solid transparent',
+                    transition: 'all 0.15s ease'
                   }}
-                />
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                    {m.fullName}
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                >
+                  <img
+                    src={m.avatar}
+                    alt={m.fullName}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      filter: m.isDeceased ? 'var(--sepia-filter)' : undefined
+                    }}
+                  />
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? 'var(--text-gold)' : '#f8fafc', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                      {m.fullName}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                      Gen {m.generation} {m.nickname ? `• "${m.nickname}"` : ''} {m.isDeceased ? '• 🎗️ Wafat' : ''}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    Gen {m.generation} {m.nickname ? `• "${m.nickname}"` : ''} {m.isDeceased ? '• 🎗️ Wafat' : ''}
-                  </div>
+                  {isHighlighted && (
+                    <span style={{ fontSize: 10.5, color: 'var(--accent-gold)', fontWeight: 700, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '2px 6px', borderRadius: 4 }}>
+                      ↵ Enter
+                    </span>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
