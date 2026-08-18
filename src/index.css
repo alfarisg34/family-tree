@@ -54,6 +54,7 @@ body {
   overflow: hidden;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   user-select: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -63,6 +64,7 @@ body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -707,16 +709,49 @@ body {
 }
 
 @media (max-width: 640px) {
+  .floating-controls-panel {
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    left: 12px;
+    gap: 4px;
+  }
+
+  .control-btn-group {
+    padding: 2px;
+    gap: 1px;
+    border-radius: var(--radius-md);
+  }
+
+  .control-icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .control-zoom-indicator {
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1px 0;
+  }
+
+  .map-legend-drawer {
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    left: 52px;
+    min-width: unset;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+  }
+
   .minimap-panel {
-    bottom: 80px;
-    right: 14px;
-    width: 135px;
-    height: 96px;
+    bottom: max(64px, calc(env(safe-area-inset-bottom, 16px) + 48px));
+    right: 12px;
+    width: 130px;
+    height: 90px;
   }
 
   .minimap-pill-btn {
-    bottom: 80px;
-    right: 14px;
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    right: 12px;
+    padding: 5px 10px;
+    font-size: 10.5px;
   }
 }
 
