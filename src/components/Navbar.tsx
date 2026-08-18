@@ -110,15 +110,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           }}
           title={isAdmin ? 'Klik untuk beralih pohon silsilah keluarga (Mode Admin)' : undefined}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
             <h1 className="nav-title">{familyData.familyTreeName}</h1>
             {isAdmin && (
-              <ChevronDown size={16} style={{ color: 'var(--text-gold)', opacity: 0.8 }} />
+              <ChevronDown size={15} style={{ color: 'var(--text-gold)', opacity: 0.8, flexShrink: 0 }} />
             )}
           </div>
           <div className="nav-subtitle">
-            {isAdmin ? `/${currentSlug} • ` : ''}{membersList.length} Anggota Keluarga • Multi-Generasi Silsilah
-            {isCloudSyncing && <span style={{ color: 'var(--text-gold)', marginLeft: 6 }}>• Menyinkronkan...</span>}
+            {isAdmin ? `/${currentSlug} • ` : ''}{membersList.length} Anggota • Multi-Generasi Silsilah
+            {isCloudSyncing && <span style={{ color: 'var(--text-gold)', marginLeft: 4 }}>• Sync...</span>}
           </div>
         </div>
 

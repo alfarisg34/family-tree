@@ -467,7 +467,8 @@ body {
   top: 16px;
   left: 16px;
   right: 16px;
-  height: 62px;
+  min-height: 62px;
+  height: auto;
   background: var(--bg-glass-heavy);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
@@ -475,9 +476,67 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 8px 18px;
   z-index: 40;
   box-shadow: var(--shadow-elevated);
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .app-navbar {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    min-height: 52px;
+    padding: 7px 12px;
+    border-radius: var(--radius-md);
+    gap: 8px;
+  }
+
+  .nav-brand-section {
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .nav-logo-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .nav-logo-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .nav-title {
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .nav-subtitle {
+    font-size: 10px;
+    line-height: 1.2;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-actions-section {
+    flex-shrink: 0;
+    gap: 6px;
+  }
+
+  .btn-nav-glass, .btn-nav-primary {
+    padding: 5px 9px;
+    font-size: 11px;
+    gap: 4px;
+    border-radius: var(--radius-sm);
+  }
 }
 
 .nav-brand-section {
