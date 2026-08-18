@@ -257,6 +257,31 @@ export const robbanisahFamilyData: FamilyData = {
   }
 };
 
+// 3. Template Keluarga Harun Thaib (/keluargaharunthaib)
+export const harunThaibFamilyData: FamilyData = {
+  slug: "keluargaharunthaib",
+  familyTreeName: "Keluarga Besar Harun Thaib",
+  description: "Silsilah Garis Keturunan Keluarga Besar Harun Thaib",
+  updatedAt: new Date().toISOString(),
+  members: {
+    "mem-harun-thaib": {
+      id: "mem-harun-thaib",
+      fullName: "Harun Thaib",
+      nickname: "Uyut Harun",
+      gender: "male",
+      generation: 1,
+      isDeceased: true,
+      bio: "Leluhur dan pendiri silsilah Keluarga Besar Harun Thaib.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80&auto=format&fit=crop",
+      parentIds: [],
+      relationshipToParents: "biological",
+      spouses: [],
+      gallery: [],
+      order: 1
+    }
+  }
+};
+
 export const initialFamilyData = sukandiFamilyData;
 
 /**
@@ -264,6 +289,9 @@ export const initialFamilyData = sukandiFamilyData;
  */
 export function getInitialFamilyDataBySlug(slug: string): FamilyData {
   const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  if (cleanSlug === 'keluargaharunthaib') {
+    return harunThaibFamilyData;
+  }
   if (cleanSlug === 'keluargahajjahrobbanisah') {
     return robbanisahFamilyData;
   }

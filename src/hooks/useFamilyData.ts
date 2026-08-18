@@ -29,7 +29,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
 
   const [allTrees, setAllTrees] = useState<Array<{ id: string; slug: string; tree_name: string }>>([
     { id: '1', slug: 'keluargabanisukandi', tree_name: 'Keluarga Besar Bani Sukandi' },
-    { id: '2', slug: 'keluargahajjahrobbanisah', tree_name: 'Keluarga Besar Hajjah Robbanisah' }
+    { id: '2', slug: 'keluargaharunthaib', tree_name: 'Keluarga Besar Harun Thaib' },
+    { id: '3', slug: 'keluargahajjahrobbanisah', tree_name: 'Keluarga Besar Hajjah Robbanisah' }
   ]);
 
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {

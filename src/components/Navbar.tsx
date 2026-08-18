@@ -108,7 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             display: 'flex',
             flexDirection: 'column'
           }}
-          title={isAdmin ? 'Klik untuk beralih keluarga atau membuat silsilah baru (Mode Admin)' : undefined}
+          title={isAdmin ? 'Klik untuk beralih pohon silsilah keluarga (Mode Admin)' : undefined}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <h1 className="nav-title">{familyData.familyTreeName}</h1>
@@ -179,6 +179,36 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div
                 onClick={() => {
                   setIsTreeSwitcherOpen(false);
+                  onNavigateToSlug('keluargaharunthaib');
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  background: currentSlug === 'keluargaharunthaib' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                  borderLeft: currentSlug === 'keluargaharunthaib' ? '3px solid var(--accent-gold)' : '3px solid transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'background 0.15s ease'
+                }}
+                onMouseEnter={(e) => { if (currentSlug !== 'keluargaharunthaib') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                onMouseLeave={(e) => { if (currentSlug !== 'keluargaharunthaib') e.currentTarget.style.background = 'transparent'; }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
+                    Keluarga Besar Harun Thaib
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/keluargaharunthaib</div>
+                </div>
+                {currentSlug === 'keluargaharunthaib' && (
+                  <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700 }}>Aktif</span>
+                )}
+              </div>
+
+              <div
+                onClick={() => {
+                  setIsTreeSwitcherOpen(false);
                   onNavigateToSlug('keluargahajjahrobbanisah');
                 }}
                 style={{
@@ -208,7 +238,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Any other dynamically discovered trees */}
               {allTrees
-                .filter(t => t.slug && t.slug !== 'keluargabanisukandi' && t.slug !== 'keluargahajjahrobbanisah')
+                .filter(t => t.slug && t.slug !== 'keluargabanisukandi' && t.slug !== 'keluargaharunthaib' && t.slug !== 'keluargahajjahrobbanisah')
                 .map((tree) => (
                   <div
                     key={tree.id || tree.slug}
@@ -235,27 +265,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ))}
             </div>
 
-            {/* Create New Tree Option */}
-            <div style={{ borderTop: '1px solid var(--border-glass)', marginTop: 6, paddingTop: 6 }}>
-              <div
-                onClick={handleCreateNewTree}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer',
-                  color: 'var(--text-gold)',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <Plus size={14} /> + Buat Silsilah Keluarga Baru...
+            {/* Create New Tree Option (Admin or Click to Login) */}
+            {isAdmin && (
+              <div style={{ borderTop: '1px solid var(--border-glass)', marginTop: 6, paddingTop: 6 }}>
+                <div
+                  onClick={handleCreateNewTree}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    color: 'var(--accent-gold)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    transition: 'background 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <Plus size={15} /> Buat Pohon Silsilah Baru...
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
