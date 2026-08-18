@@ -61,9 +61,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onLogin, onClo
               />
               <KeyRound size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             </div>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              💡 Petunjuk demo: password default adalah <code>admin</code> atau <code>keluarga123</code>
-            </span>
           </div>
 
           {error && (
