@@ -843,6 +843,46 @@ body {
     padding: 6px 10px;
     font-size: 10px;
   }
+
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal-content-card {
+    max-height: 92dvh;
+    border-radius: var(--radius-md);
+  }
+
+  .modal-header-hero {
+    padding: 18px 14px 14px 14px;
+  }
+
+  .modal-profile-header-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding-right: 32px;
+  }
+
+  .modal-avatar-wrapper {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+  }
+
+  .modal-full-name {
+    font-size: 17px !important;
+  }
+
+  .modal-nickname-title {
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .modal-body {
+    padding: 16px 14px;
+    gap: 16px;
+  }
 }
 
 .map-legend-title {
@@ -943,12 +983,12 @@ body {
 /* Modal Header with Banner & Profile Photo */
 .modal-header-hero {
   position: relative;
-  height: 140px;
   background: linear-gradient(135deg, #1e293b, #0f172a);
-  background-image: radial-gradient(circle at 80% 20%, rgba(245, 158, 11, 0.15) 0%, transparent 60%);
+  background-image: radial-gradient(circle at 85% 15%, rgba(245, 158, 11, 0.18) 0%, transparent 65%);
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
-  padding: 16px;
+  padding: 24px 24px 20px 24px;
+  border-bottom: 1px solid var(--border-glass);
 }
 
 .modal-close-btn {
@@ -972,22 +1012,22 @@ body {
   background: rgba(239, 68, 68, 0.8);
 }
 
-.modal-profile-overlap {
-  position: absolute;
-  bottom: -45px;
-  left: 24px;
+.modal-profile-header-content {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
+  align-items: center;
+  gap: 18px;
+  padding-right: 36px;
 }
 
 .modal-avatar-wrapper {
   position: relative;
-  width: 96px;
-  height: 96px;
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
   border-radius: var(--radius-full);
-  border: 3px solid #0f172a;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border: 3px solid var(--accent-gold);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.2);
+  overflow: hidden;
 }
 
 .modal-avatar-img {
@@ -1003,7 +1043,7 @@ body {
 }
 
 .modal-body {
-  padding: 55px 24px 24px 24px;
+  padding: 20px 24px 24px 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -1020,10 +1060,11 @@ body {
   font-size: 22px;
   font-weight: 800;
   color: var(--text-primary);
+  line-height: 1.25;
 }
 
 .modal-nickname-title {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-gold);
   display: flex;
   align-items: center;

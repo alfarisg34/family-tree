@@ -212,7 +212,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             <X size={18} />
           </button>
 
-          <div className="modal-profile-overlap">
+          <div className="modal-profile-header-content">
             <div className="modal-avatar-wrapper">
               <img
                 src={member.avatar}
@@ -220,37 +220,38 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 className={`modal-avatar-img ${isDeceased ? 'is-deceased' : ''}`}
               />
             </div>
+
+            {/* Name & Primary Badges */}
+            <div className="modal-name-group">
+              <h2 className="modal-full-name">
+                {formatMemberFullName(member)}
+              </h2>
+
+              <div className="modal-nickname-title">
+                {member.nickname && <span>Panggilan: "{member.nickname}"</span>}
+                
+                <span className="badge-tag-status generation">
+                  {getGenerationLabel(member.generation)}
+                </span>
+
+                {isDeceased && (
+                  <span className="badge-tag-status deceased">
+                    🎗️ Almarhum / Almarhumah
+                  </span>
+                )}
+
+                {isAdopted && (
+                  <span className="badge-tag-status adopted">
+                    🌱 Anak Angkat
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Modal Body */}
         <div className="modal-body">
-          {/* Name & Primary Badges */}
-          <div className="modal-name-group">
-            <h2 className="modal-full-name">
-              {formatMemberFullName(member)}
-            </h2>
-
-            <div className="modal-nickname-title">
-              {member.nickname && <span>Panggilan: "{member.nickname}"</span>}
-              
-              <span className="badge-tag-status generation">
-                {getGenerationLabel(member.generation)}
-              </span>
-
-              {isDeceased && (
-                <span className="badge-tag-status deceased">
-                  🎗️ Almarhum / Almarhumah
-                </span>
-              )}
-
-              {isAdopted && (
-                <span className="badge-tag-status adopted">
-                  🌱 Anak Angkat
-                </span>
-              )}
-            </div>
-          </div>
 
           {/* Attributes Grid */}
           <div className="attributes-grid">
