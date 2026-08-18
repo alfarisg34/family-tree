@@ -94,7 +94,6 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
 
   const nodes: Record<string, LayoutNode> = {};
   const edges: LayoutEdge[] = [];
-  const processedSpousePairs = new Set<string>();
 
   // Count descendants for each member
   const countDescendants = (id: string, visited = new Set<string>()): number => {
@@ -302,9 +301,15 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
             spouses: []
           };
         } else {
-          // Primary + Spouse 0
-          const primaryX = segMid - (NODE_SIZE + SPOUSE_GAP) / 2;
-          const spouse0X = segMid + (NODE_SIZE + SPOUSE_GAP) / 2;
+          // If 1 spouse: Primary on left, Spouse 0 on right: [Primary, Spouse 0]
+          // If 2+ spouses: Spouse 0 on left, Primary in middle: [Spouse 0, Primary]
+          // so Primary connects to Spouse 0 on left and Spouse 1 on right without lines crossing!
+          const hasMultipleSpouses = unit.spouses.length >= 2;
+          const leftX = segMid - (NODE_SIZE + SPOUSE_GAP) / 2;
+          const rightX = segMid + (NODE_SIZE + SPOUSE_GAP) / 2;
+
+          const primaryX = hasMultipleSpouses ? rightX : leftX;
+          const spouse0X = hasMultipleSpouses ? leftX : rightX;
 
           nodes[unit.primaryMember.id] = {
             id: unit.primaryMember.id,
@@ -409,32 +414,27 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
   });
 
   // 4. Connect Spouses with Horizontal Marriage Lines
-  memberList.forEach(member => {
-    const nodeA = nodes[member.id];
-    if (!nodeA) return;
+  unitMap.forEach(unit => {
+    const primaryNode = nodes[unit.primaryMember.id];
+    if (!primaryNode) return;
 
-    if (member.spouses && member.spouses.length > 0) {
-      member.spouses.forEach(sp => {
-        const nodeB = nodes[sp.spouseId];
-        if (!nodeB) return;
-
-        const pairKey = [member.id, sp.spouseId].sort().join('---');
-        if (processedSpousePairs.has(pairKey)) return;
-        processedSpousePairs.add(pairKey);
-
-        const edgeType = sp.status === 'divorced' ? 'marriage-divorced' : 'marriage-active';
-        
-        // Avatar circle centers
-        const isALeft = nodeA.x < nodeB.x;
-        const leftNode = isALeft ? nodeA : nodeB;
-        const rightNode = isALeft ? nodeB : nodeA;
+    if (unit.spouses.length === 1) {
+      // 1 spouse: connect Primary directly to Spouse 0
+      const sp0Node = nodes[unit.spouses[0].id];
+      if (sp0Node) {
+        const isALeft = primaryNode.x < sp0Node.x;
+        const leftNode = isALeft ? primaryNode : sp0Node;
+        const rightNode = isALeft ? sp0Node : primaryNode;
 
         const startX = leftNode.x + 36;
         const endX = rightNode.x - 36;
-        const lineY = nodeA.y - 30; // Center height of avatar image
+        const lineY = primaryNode.y - 30;
+
+        const spObj = unit.primaryMember.spouses?.find(s => s.spouseId === unit.spouses[0].id);
+        const edgeType = spObj?.status === 'divorced' ? 'marriage-divorced' : 'marriage-active';
 
         edges.push({
-          id: `edge-spouse-${pairKey}`,
+          id: `edge-spouse-${unit.primaryMember.id}-${unit.spouses[0].id}`,
           fromId: leftNode.id,
           toId: rightNode.id,
           type: edgeType,
@@ -444,7 +444,86 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
           ],
           midpoint: { x: (startX + endX) / 2, y: lineY }
         });
-      });
+      }
+    } else if (unit.spouses.length >= 2) {
+      // 2+ spouses:
+      // Node order: [ Spouse 0 (left) <== Primary (center) ==> Spouse 1 (right) ==> Spouse 2 (further right) ... ]
+      // Line 0: Spouse 0 <==> Primary
+      const sp0Node = nodes[unit.spouses[0].id];
+      if (sp0Node) {
+        const leftNode = sp0Node.x < primaryNode.x ? sp0Node : primaryNode;
+        const rightNode = sp0Node.x < primaryNode.x ? primaryNode : sp0Node;
+        const startX = leftNode.x + 36;
+        const endX = rightNode.x - 36;
+        const lineY = primaryNode.y - 30;
+
+        const spObj = unit.primaryMember.spouses?.find(s => s.spouseId === unit.spouses[0].id);
+        const edgeType = spObj?.status === 'divorced' ? 'marriage-divorced' : 'marriage-active';
+
+        edges.push({
+          id: `edge-spouse-${unit.primaryMember.id}-${unit.spouses[0].id}`,
+          fromId: leftNode.id,
+          toId: rightNode.id,
+          type: edgeType,
+          points: [
+            { x: startX, y: lineY },
+            { x: endX, y: lineY }
+          ],
+          midpoint: { x: (startX + endX) / 2, y: lineY }
+        });
+      }
+
+      // Line 1: Primary <==> Spouse 1
+      const sp1Node = nodes[unit.spouses[1].id];
+      if (sp1Node) {
+        const leftNode = primaryNode.x < sp1Node.x ? primaryNode : sp1Node;
+        const rightNode = primaryNode.x < sp1Node.x ? sp1Node : primaryNode;
+        const startX = leftNode.x + 36;
+        const endX = rightNode.x - 36;
+        const lineY = primaryNode.y - 30;
+
+        const spObj = unit.primaryMember.spouses?.find(s => s.spouseId === unit.spouses[1].id);
+        const edgeType = spObj?.status === 'divorced' ? 'marriage-divorced' : 'marriage-active';
+
+        edges.push({
+          id: `edge-spouse-${unit.primaryMember.id}-${unit.spouses[1].id}`,
+          fromId: leftNode.id,
+          toId: rightNode.id,
+          type: edgeType,
+          points: [
+            { x: startX, y: lineY },
+            { x: endX, y: lineY }
+          ],
+          midpoint: { x: (startX + endX) / 2, y: lineY }
+        });
+      }
+
+      // Line k (k >= 2): Direct overhead bridge from Primary to Spouse [k]
+      for (let k = 2; k < unit.spouses.length; k++) {
+        const currSpNode = nodes[unit.spouses[k].id];
+        if (currSpNode) {
+          const bridgeY = primaryNode.y - 56 - (k - 2) * 18;
+          const startX = primaryNode.x + 15 + (k - 2) * 8;
+          const endX = currSpNode.x;
+
+          const spObj = unit.primaryMember.spouses?.find(s => s.spouseId === unit.spouses[k].id);
+          const edgeType = spObj?.status === 'divorced' ? 'marriage-divorced' : 'marriage-active';
+
+          edges.push({
+            id: `edge-spouse-${unit.primaryMember.id}-${unit.spouses[k].id}`,
+            fromId: primaryNode.id,
+            toId: currSpNode.id,
+            type: edgeType,
+            points: [
+              { x: startX, y: primaryNode.y - 42 },
+              { x: startX, y: bridgeY },
+              { x: endX, y: bridgeY },
+              { x: endX, y: currSpNode.y - 42 }
+            ],
+            midpoint: { x: (startX + endX) / 2, y: bridgeY }
+          });
+        }
+      }
     }
   });
 
