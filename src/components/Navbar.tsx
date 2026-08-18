@@ -146,100 +146,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* List of default/known trees */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <div
-                onClick={() => {
-                  setIsTreeSwitcherOpen(false);
-                  onNavigateToSlug('keluargabanisukandi');
-                }}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer',
-                  background: currentSlug === 'keluargabanisukandi' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                  borderLeft: currentSlug === 'keluargabanisukandi' ? '3px solid var(--accent-gold)' : '3px solid transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'background 0.15s ease'
-                }}
-                onMouseEnter={(e) => { if (currentSlug !== 'keluargabanisukandi') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
-                onMouseLeave={(e) => { if (currentSlug !== 'keluargabanisukandi') e.currentTarget.style.background = 'transparent'; }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
-                    Keluarga Besar Bani Sukandi
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/keluargabanisukandi</div>
-                </div>
-                {currentSlug === 'keluargabanisukandi' && (
-                  <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700 }}>Aktif</span>
-                )}
-              </div>
+              {allTrees.map((tree) => {
+                const isActive = currentSlug === tree.slug;
 
-              <div
-                onClick={() => {
-                  setIsTreeSwitcherOpen(false);
-                  onNavigateToSlug('keluargaharunthaib');
-                }}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer',
-                  background: currentSlug === 'keluargaharunthaib' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                  borderLeft: currentSlug === 'keluargaharunthaib' ? '3px solid var(--accent-gold)' : '3px solid transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'background 0.15s ease'
-                }}
-                onMouseEnter={(e) => { if (currentSlug !== 'keluargaharunthaib') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
-                onMouseLeave={(e) => { if (currentSlug !== 'keluargaharunthaib') e.currentTarget.style.background = 'transparent'; }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
-                    Keluarga Besar Harun Thaib
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/keluargaharunthaib</div>
-                </div>
-                {currentSlug === 'keluargaharunthaib' && (
-                  <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700 }}>Aktif</span>
-                )}
-              </div>
-
-              <div
-                onClick={() => {
-                  setIsTreeSwitcherOpen(false);
-                  onNavigateToSlug('keluargahajjahrobbanisah');
-                }}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer',
-                  background: currentSlug === 'keluargahajjahrobbanisah' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                  borderLeft: currentSlug === 'keluargahajjahrobbanisah' ? '3px solid var(--accent-gold)' : '3px solid transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'background 0.15s ease'
-                }}
-                onMouseEnter={(e) => { if (currentSlug !== 'keluargahajjahrobbanisah') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
-                onMouseLeave={(e) => { if (currentSlug !== 'keluargahajjahrobbanisah') e.currentTarget.style.background = 'transparent'; }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
-                    Keluarga Besar Hajjah Robbanisah
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/keluargahajjahrobbanisah</div>
-                </div>
-                {currentSlug === 'keluargahajjahrobbanisah' && (
-                  <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700 }}>Aktif</span>
-                )}
-              </div>
-
-              {/* Any other dynamically discovered trees */}
-              {allTrees
-                .filter(t => t.slug && t.slug !== 'keluargabanisukandi' && t.slug !== 'keluargaharunthaib' && t.slug !== 'keluargahajjahrobbanisah')
-                .map((tree) => (
+                return (
                   <div
                     key={tree.id || tree.slug}
                     onClick={() => {
@@ -250,19 +160,32 @@ export const Navbar: React.FC<NavbarProps> = ({
                       padding: '8px 12px',
                       borderRadius: 'var(--radius-sm)',
                       cursor: 'pointer',
-                      background: currentSlug === tree.slug ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                      borderLeft: currentSlug === tree.slug ? '3px solid var(--accent-gold)' : '3px solid transparent',
+                      background: isActive ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                      borderLeft: isActive ? '3px solid var(--accent-gold)' : '3px solid transparent',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'transparent';
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{tree.tree_name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
+                        {tree.tree_name}
+                      </div>
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/{tree.slug}</div>
                     </div>
+                    {isActive && (
+                      <span style={{ fontSize: 11, color: 'var(--accent-gold)', fontWeight: 700 }}>Aktif</span>
+                    )}
                   </div>
-                ))}
+                );
+              })}
             </div>
 
             {/* Create New Tree Option (Admin or Click to Login) */}

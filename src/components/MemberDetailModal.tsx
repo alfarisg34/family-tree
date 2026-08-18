@@ -406,14 +406,16 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             </div>
           )}
 
-          {/* Karosel Galeri Foto Kenangan */}
-          {member.gallery && member.gallery.length > 0 && (
+          {/* Karosel Galeri Foto Kenangan & Foto Profil */}
+          {(Boolean(member.avatar) || Boolean(member.gallery && member.gallery.length > 0)) && (
             <div>
               <div className="attribute-label" style={{ marginBottom: 8 }}>
-                Galeri Kenangan ({member.gallery.length + 1} Foto)
+                {member.gallery && member.gallery.length > 0
+                  ? `Galeri Kenangan (${member.gallery.length + (member.avatar ? 1 : 0)} Foto)`
+                  : 'Dokumentasi Foto Profil (1 Foto)'}
               </div>
               <PhotoCarousel
-                photos={member.gallery}
+                photos={member.gallery || []}
                 defaultAvatar={member.avatar}
                 isDeceased={isDeceased}
               />

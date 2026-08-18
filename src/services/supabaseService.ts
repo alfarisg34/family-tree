@@ -152,23 +152,63 @@ export async function uploadImageToSupabaseStorage(
   }
 }
 
+// Canonicalize tree names to clean standardized slugs
+function getCanonicalSlug(treeName: string): string {
+  const norm = (treeName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (norm.includes('sukandi')) return 'keluargabanisukandi';
+  if (norm.includes('harun')) return 'keluargaharunthaib';
+  if (norm.includes('robbanisah')) return 'keluargahajjahrobbanisah';
+  return norm;
+}
+
 /**
  * Fetch all available family trees (for switcher dropdown)
  */
 export async function fetchAllFamilyTreesFromSupabase(): Promise<Array<{ id: string; slug: string; tree_name: string }>> {
   const supabase = getSupabaseClient();
-  if (!supabase) return [];
+  if (!supabase) return [
+    { id: '1', slug: 'keluargabanisukandi', tree_name: 'Keluarga Besar Bani Sukandi' },
+    { id: '2', slug: 'keluargaharunthaib', tree_name: 'Keluarga Besar Harun Thaib' },
+    { id: '3', slug: 'keluargahajjahrobbanisah', tree_name: 'Keluarga Besar Hajjah Robbanisah' }
+  ];
 
   try {
     const { data, error } = await supabase
       .from('family_trees')
-      .select('id, slug, tree_name')
+      .select('id, tree_name, description, created_at')
       .order('created_at', { ascending: true });
 
-    if (error || !data) return [];
-    return data;
+    if (error || !data || data.length === 0) {
+      return [
+        { id: '1', slug: 'keluargabanisukandi', tree_name: 'Keluarga Besar Bani Sukandi' },
+        { id: '2', slug: 'keluargaharunthaib', tree_name: 'Keluarga Besar Harun Thaib' },
+        { id: '3', slug: 'keluargahajjahrobbanisah', tree_name: 'Keluarga Besar Hajjah Robbanisah' }
+      ];
+    }
+
+    // Deduplicate by canonical slug
+    const seenSlugs = new Set<string>();
+    const uniqueTrees: Array<{ id: string; slug: string; tree_name: string }> = [];
+
+    data.forEach((item: any) => {
+      const canonicalSlug = getCanonicalSlug(item.tree_name);
+      if (canonicalSlug && !seenSlugs.has(canonicalSlug)) {
+        seenSlugs.add(canonicalSlug);
+        uniqueTrees.push({
+          id: item.id,
+          slug: canonicalSlug,
+          tree_name: item.tree_name
+        });
+      }
+    });
+
+    return uniqueTrees;
   } catch {
-    return [];
+    return [
+      { id: '1', slug: 'keluargabanisukandi', tree_name: 'Keluarga Besar Bani Sukandi' },
+      { id: '2', slug: 'keluargaharunthaib', tree_name: 'Keluarga Besar Harun Thaib' },
+      { id: '3', slug: 'keluargahajjahrobbanisah', tree_name: 'Keluarga Besar Hajjah Robbanisah' }
+    ];
   }
 }
 
@@ -182,42 +222,47 @@ export async function fetchFamilyDataFromSupabase(slug: string = 'keluargabanisu
   try {
     const defaultTemplate = getInitialFamilyDataBySlug(slug);
 
-    // 1. Fetch tree record by slug or tree_name
+    // 1. Fetch tree record by tree_name or keywords
     let treeRecord: any = null;
 
-    // Try matching slug column first
-    const { data: treeBySlug } = await supabase
+    // Search by exact tree_name from template first
+    const { data: treeByExactName } = await supabase
       .from('family_trees')
       .select('*')
-      .eq('slug', slug)
+      .eq('tree_name', defaultTemplate.familyTreeName)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .maybeSingle();
 
-    if (treeBySlug) {
-      treeRecord = treeBySlug;
+    if (treeByExactName) {
+      treeRecord = treeByExactName;
     } else {
-      // Try matching by tree_name
-      const { data: treeByName } = await supabase
-        .from('family_trees')
-        .select('*')
-        .ilike('tree_name', `%${slug.replace(/^keluarga(besar)?(bani)?/i, '')}%`)
-        .maybeSingle();
+      // Also try matching by name keywords (e.g. "Harun Thaib", "Robbanisah", "Sukandi")
+      const keyword = defaultTemplate.familyTreeName
+        .replace(/^Keluarga\s+(Besar\s+)?(Bani\s+)?/i, '')
+        .trim();
 
-      if (treeByName) {
-        treeRecord = treeByName;
+      if (keyword) {
+        const { data: treeByKeyword } = await supabase
+          .from('family_trees')
+          .select('*')
+          .ilike('tree_name', `%${keyword}%`)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (treeByKeyword) {
+          treeRecord = treeByKeyword;
+        }
       }
     }
 
-    // If tree does not exist yet in Supabase, create it!
+    // If tree genuinely does not exist yet in Supabase, create it once!
     if (!treeRecord) {
       const insertPayload: Record<string, any> = {
         tree_name: defaultTemplate.familyTreeName,
         description: defaultTemplate.description || ''
       };
-      
-      // Attempt to include slug if supported
-      try {
-        insertPayload.slug = slug;
-      } catch {}
 
       const { data: newTree, error: createTreeErr } = await supabase
         .from('family_trees')
@@ -226,13 +271,7 @@ export async function fetchFamilyDataFromSupabase(slug: string = 'keluargabanisu
         .single();
 
       if (createTreeErr) {
-        delete insertPayload.slug;
-        const { data: fallbackTree } = await supabase
-          .from('family_trees')
-          .insert(insertPayload)
-          .select('*')
-          .single();
-        treeRecord = fallbackTree;
+        console.error('Error creating new family tree in Supabase:', createTreeErr.message);
       } else {
         treeRecord = newTree;
       }

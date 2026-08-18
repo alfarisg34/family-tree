@@ -41,7 +41,7 @@ export async function optimizeImage(
             width = maxWidth;
           } else {
             width = Math.round((width * maxHeight) / height);
-            maxHeight = maxHeight;
+            height = maxHeight;
           }
         }
 
