@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   type FamilyMember,
   type FamilyData,
@@ -19,8 +19,106 @@ import {
   Trash2,
   Flower2,
   User,
-  MessageCircle
+  MessageCircle,
+  Baby,
+  Sparkles,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+
+interface DescendantItem {
+  member: FamilyMember;
+  parentName?: string;
+  order: number;
+}
+
+interface DescendantGenerationGroup {
+  level: number;
+  label: string;
+  items: DescendantItem[];
+}
+
+// Function to compute all descendants generation by generation in strict hierarchical birth order:
+// 1. Children: ordered strictly by birth order (Anak 1, Anak 2, ...)
+// 2. Grandchildren: ordered by children of Anak 1 first, then children of Anak 2, etc.
+// 3. Great-grandchildren: ordered by grandchildren of Anak 1 first, etc.
+const getDescendantsByLevel = (
+  rootMemberId: string,
+  membersMap: Record<string, FamilyMember>
+): DescendantGenerationGroup[] => {
+  const result: DescendantGenerationGroup[] = [];
+  const visited = new Set<string>([rootMemberId]);
+
+  const levelLabels = [
+    'Anak',
+    'Cucu',
+    'Cicit',
+    'Piut (Canggah)',
+    'Anggas (Wareng)',
+    'Udeg-udeg',
+    'Gantung Siwur'
+  ];
+
+  // Helper to get ordered children of a parent node
+  const getOrderedChildrenOfParent = (parentId: string, parentSpouseIds: string[] = []): FamilyMember[] => {
+    const parentGroup = [parentId, ...parentSpouseIds];
+    return Object.values(membersMap)
+      .filter((m) => m.parentIds && m.parentIds.some((pId) => parentGroup.includes(pId)))
+      .filter((m) => !visited.has(m.id))
+      .sort((a, b) => (a.order || 1) - (b.order || 1));
+  };
+
+  const rootMember = membersMap[rootMemberId];
+  const rootSpouseIds = rootMember?.spouses?.map((s) => s.spouseId) || [];
+
+  // Level 1: Children of root member
+  const initialChildren = getOrderedChildrenOfParent(rootMemberId, rootSpouseIds);
+  let currentGenerationList: DescendantItem[] = initialChildren.map((c) => {
+    visited.add(c.id);
+    return {
+      member: c,
+      parentName: rootMember?.nickname || (rootMember?.fullName ? rootMember.fullName.split(' ')[0] : 'Orang Tua'),
+      order: c.order || 1
+    };
+  });
+
+  let level = 1;
+
+  while (currentGenerationList.length > 0) {
+    const label = level <= levelLabels.length
+      ? levelLabels[level - 1]
+      : `Keturunan Generasi ke-${level}`;
+
+    result.push({
+      level,
+      label,
+      items: [...currentGenerationList]
+    });
+
+    // Next Level: iterate through parents in strict hierarchy order (Anak 1 -> then Anak 2 -> etc.)
+    const nextGenerationList: DescendantItem[] = [];
+
+    currentGenerationList.forEach((parentItem) => {
+      const p = parentItem.member;
+      const spouseIds = (p.spouses || []).map((s) => s.spouseId);
+      const childrenOfP = getOrderedChildrenOfParent(p.id, spouseIds);
+
+      childrenOfP.forEach((child) => {
+        visited.add(child.id);
+        nextGenerationList.push({
+          member: child,
+          parentName: p.nickname || p.fullName.split(' ')[0],
+          order: child.order || 1
+        });
+      });
+    });
+
+    currentGenerationList = nextGenerationList;
+    level++;
+  }
+
+  return result;
+};
 
 interface MemberDetailModalProps {
   member: FamilyMember;
@@ -41,9 +139,14 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   onEditMember,
   onDeleteMember
 }) => {
+  const [expandedDescendantLevel, setExpandedDescendantLevel] = useState<number | null>(null);
   const isDeceased = member.isDeceased;
   const isAdopted = member.relationshipToParents === 'adopted';
   const ageInfo = calculateAge(member.birthDate, member.isDeceased, member.passedDate);
+
+  // Compute all descendants by generational level
+  const descendantLevels = getDescendantsByLevel(member.id, familyData.members);
+  const totalDescendantsCount = descendantLevels.reduce((sum, g) => sum + g.items.length, 0);
 
   // Find related family members
   const parents = (member.parentIds || [])
@@ -313,6 +416,122 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 defaultAvatar={member.avatar}
                 isDeceased={isDeceased}
               />
+            </div>
+          )}
+
+          {/* Statistik Keturunan & Trah Keluarga (Anak, Cucu, Cicit, dst.) */}
+          {totalDescendantsCount > 0 && (
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-md)', padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-gold)', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <Sparkles size={15} /> Silsilah Keturunan ({totalDescendantsCount} Jiwa)
+                </div>
+                <span style={{ fontSize: 11, background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 700 }}>
+                  {descendantLevels.length} Generasi ke Bawah
+                </span>
+              </div>
+
+              {/* Quick Stat Badges Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(4, descendantLevels.length)}, 1fr)`, gap: 8, marginBottom: 14 }}>
+                {descendantLevels.map((group) => {
+                  const isExpanded = expandedDescendantLevel === group.level;
+                  return (
+                    <div
+                      key={group.level}
+                      onClick={() => setExpandedDescendantLevel(isExpanded ? null : group.level)}
+                      style={{
+                        background: isExpanded ? 'rgba(245, 158, 11, 0.2)' : 'rgba(30, 41, 59, 0.5)',
+                        border: isExpanded ? '1.5px solid var(--accent-gold)' : '1px solid var(--border-glass)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '8px 10px',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isExpanded ? '0 0 12px rgba(245, 158, 11, 0.25)' : 'none'
+                      }}
+                      title={`Klik untuk melihat urutan silsilah ${group.label}`}
+                    >
+                      <div style={{ fontSize: 11, color: isExpanded ? '#fbbf24' : 'var(--text-secondary)', fontWeight: 600 }}>
+                        {group.label.split(' ')[0]}
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc', marginTop: 2 }}>
+                        {group.items.length} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-muted)' }}>Jiwa</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* List of Descendants per Generation with interactive chips */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {descendantLevels.map((group) => {
+                  const isExpanded = expandedDescendantLevel === group.level || expandedDescendantLevel === null;
+                  return (
+                    <div
+                      key={group.level}
+                      style={{
+                        background: 'rgba(30, 41, 59, 0.35)',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '10px 12px'
+                      }}
+                    >
+                      <div
+                        onClick={() => setExpandedDescendantLevel(expandedDescendantLevel === group.level ? -1 : group.level)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: '#f8fafc' }}>
+                          <Baby size={14} style={{ color: 'var(--accent-gold)' }} />
+                          <span>{group.label}</span>
+                          <span style={{ fontSize: 11, color: '#fbbf24', fontWeight: 700 }}>
+                            ({group.items.length} Orang)
+                          </span>
+                        </div>
+
+                        <div style={{ color: 'var(--text-muted)' }}>
+                          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                          {group.items.map(({ member: desc, parentName }, itemIdx) => (
+                            <div
+                              key={desc.id}
+                              className="relation-chip"
+                              onClick={() => onSelectMember(desc.id)}
+                              title={`Lihat profil ${desc.fullName} (${group.level > 1 ? `Anak dari ${parentName}` : `Anak ke-${desc.order || itemIdx + 1}`})`}
+                              style={{ padding: '4px 8px', background: 'rgba(15, 23, 42, 0.8)' }}
+                            >
+                              <img src={desc.avatar} alt={desc.fullName} className="relation-chip-avatar" style={{ width: 22, height: 22 }} />
+                              <div>
+                                <div className="relation-chip-name" style={{ fontSize: 11.5 }}>
+                                  {desc.fullName} {desc.nickname ? `("${desc.nickname}")` : ''}
+                                </div>
+                                <div className="relation-chip-role" style={{ fontSize: 9.5 }}>
+                                  {group.level > 1 && parentName ? (
+                                    <span style={{ color: '#38bdf8' }}>dr. {parentName} • </span>
+                                  ) : null}
+                                  <span style={{ color: desc.gender === 'female' ? '#f43f5e' : '#0284c7' }}>
+                                    {desc.gender === 'female' ? '♀' : '♂'}
+                                  </span>
+                                  {` Anak ke-${desc.order || itemIdx + 1}`}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
