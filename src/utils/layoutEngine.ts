@@ -118,261 +118,204 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
     generationYMap.set(gen, yPos);
   });
 
+  // 2. Build Family Units Hierarchy
+  interface FamilyUnit {
+    id: string; // Primary member ID
+    primaryMember: FamilyMember;
+    spouse?: FamilyMember;
+    generation: number;
+    parentUnitId?: string;
+    childrenUnits: FamilyUnit[];
+    width: number;         // Visual width of [Primary, Spouse]
+    subtreeWidth: number;  // Total width of this unit and all its descendants
+    x: number;             // Center coordinate of this unit
+    left: number;          // Left coordinate of node(s)
+  }
+
+  const unitMap = new Map<string, FamilyUnit>();
+  const memberToUnitId = new Map<string, string>();
+  const placedMemberIds = new Set<string>();
+
+  // A. Group every member into an atomic FamilyUnit [Primary, Spouse?]
   sortedGenerations.forEach(gen => {
     const genMembers = generationsMap.get(gen) || [];
-    const y = generationYMap.get(gen) || 140;
-    
-    const placedInGen = new Set<string>();
-    const units: FamilyMember[][] = [];
-
-    // Separate bloodline members (who have parentIds) vs others, sorted by birth order
-    const bloodlineMembers = genMembers
+    const bloodline = genMembers
       .filter(m => m.parentIds && m.parentIds.length > 0)
       .sort((a, b) => (a.order || 1) - (b.order || 1));
+    const others = genMembers.filter(m => !m.parentIds || m.parentIds.length === 0);
 
-    const otherMembers = genMembers.filter(m => !m.parentIds || m.parentIds.length === 0);
+    [...bloodline, ...others].forEach(member => {
+      if (placedMemberIds.has(member.id)) return;
+      placedMemberIds.add(member.id);
 
-    // Group couples: The bloodline member MUST be on the LEFT, spouse on the RIGHT
-    [...bloodlineMembers, ...otherMembers].forEach(member => {
-      if (placedInGen.has(member.id)) return;
-
-      const unit: FamilyMember[] = [member];
-      placedInGen.add(member.id);
-
-      // Add spouses defined on this member
+      let foundSpouse: FamilyMember | undefined = undefined;
       if (member.spouses && member.spouses.length > 0) {
-        member.spouses.forEach(sp => {
-          const spouseObj = members[sp.spouseId];
-          if (spouseObj && !placedInGen.has(spouseObj.id)) {
-            unit.push(spouseObj);
-            placedInGen.add(spouseObj.id);
+        for (const sp of member.spouses) {
+          const sObj = members[sp.spouseId];
+          if (sObj && !placedMemberIds.has(sObj.id)) {
+            foundSpouse = sObj;
+            placedMemberIds.add(sObj.id);
+            break;
           }
-        });
+        }
       }
 
-      // Add spouses defined on other members
-      genMembers.forEach(other => {
-        if (!placedInGen.has(other.id) && other.spouses && other.spouses.some(s => s.spouseId === member.id)) {
-          unit.push(other);
-          placedInGen.add(other.id);
-        }
-      });
-
-      // Strict Couple Rule: Bloodline / primary member ALWAYS at index 0 (LEFT), spouse at index 1 (RIGHT)
-      unit.sort((a, b) => {
-        const aHasParents = (a.parentIds && a.parentIds.length > 0) ? 1 : 0;
-        const bHasParents = (b.parentIds && b.parentIds.length > 0) ? 1 : 0;
-        if (aHasParents !== bHasParents) {
-          return bHasParents - aHasParents; // 1 (has parents) comes before 0 (no parents)
-        }
-        return (a.order || 1) - (b.order || 1);
-      });
-
-      units.push(unit);
-    });
-
-    // Sort all units across the generation row:
-    // 1. Grouped directly under their parents' X position
-    // 2. Siblings under same parents are ordered strictly from left (Anak 1) to right (Anak terakhir)
-    units.sort((unitA, unitB) => {
-      const getUnitParentAvgX = (unit: FamilyMember[]): number => {
-        let sumX = 0;
-        let count = 0;
-        unit.forEach(m => {
-          if (m.parentIds && m.parentIds.length > 0) {
-            m.parentIds.forEach(pId => {
-              if (nodes[pId]) {
-                sumX += nodes[pId].x;
-                count++;
-              }
-            });
-          }
-        });
-        return count > 0 ? sumX / count : 9999;
-      };
-
-      const parentXA = getUnitParentAvgX(unitA);
-      const parentXB = getUnitParentAvgX(unitB);
-
-      if (Math.abs(parentXA - parentXB) > 20) {
-        return parentXA - parentXB;
-      }
-
-      // Same parents: sort strictly by birth order
-      const primaryA = unitA.find(m => m.parentIds && m.parentIds.length > 0) || unitA[0];
-      const primaryB = unitB.find(m => m.parentIds && m.parentIds.length > 0) || unitB[0];
-      return (primaryA.order || 1) - (primaryB.order || 1);
-    });
-
-    // Data structure for layout units within a generation
-    interface UnitLayout {
-      unit: FamilyMember[];
-      width: number;
-      placedLeft: number;
-      targetCenter: number;
-      parentKey: string;
-    }
-
-    const unitLayouts: UnitLayout[] = units.map(unit => {
-      const uWidth = unit.length * NODE_SIZE + (unit.length - 1) * SPOUSE_GAP;
-
-      // Identify parents of this unit
-      let parentKey = 'none';
-      let parentCenterSum = 0;
-      let parentCount = 0;
-
-      unit.forEach(m => {
-        if (m.parentIds && m.parentIds.length > 0) {
-          parentKey = [...m.parentIds].sort().join('---');
-          m.parentIds.forEach(pId => {
-            if (nodes[pId]) {
-              parentCenterSum += nodes[pId].x;
-              parentCount++;
+      if (!foundSpouse) {
+        for (const other of genMembers) {
+          if (!placedMemberIds.has(other.id) && (!other.parentIds || other.parentIds.length === 0)) {
+            if (other.spouses && other.spouses.some(s => s.spouseId === member.id)) {
+              foundSpouse = other;
+              placedMemberIds.add(other.id);
+              break;
             }
-          });
-        }
-      });
-
-      const targetCenter = parentCount > 0 ? parentCenterSum / parentCount : 600;
-
-      return {
-        unit,
-        width: uWidth,
-        placedLeft: targetCenter - uWidth / 2,
-        targetCenter,
-        parentKey
-      };
-    });
-
-    if (gen === 1) {
-      // Root generation: distribute centered around 600
-      let totalGenWidth = 0;
-      unitLayouts.forEach(u => {
-        totalGenWidth += u.width;
-      });
-      totalGenWidth += Math.max(0, unitLayouts.length - 1) * HORIZONTAL_GAP;
-
-      let startX = 600 - totalGenWidth / 2;
-      unitLayouts.forEach(u => {
-        u.placedLeft = startX;
-        startX += u.width + HORIZONTAL_GAP;
-      });
-    } else {
-      // Group units by their common parents
-      const siblingGroups = new Map<string, UnitLayout[]>();
-      unitLayouts.forEach(u => {
-        if (!siblingGroups.has(u.parentKey)) {
-          siblingGroups.set(u.parentKey, []);
-        }
-        siblingGroups.get(u.parentKey)!.push(u);
-      });
-
-      // Position each sibling cluster centered directly under their parent midpoint
-      siblingGroups.forEach((group, parentKey) => {
-        let totalClusterWidth = 0;
-        group.forEach(u => {
-          totalClusterWidth += u.width;
-        });
-        totalClusterWidth += Math.max(0, group.length - 1) * HORIZONTAL_GAP;
-
-        const pIds = parentKey.split('---');
-        const pNodes = pIds.map(id => nodes[id]).filter(Boolean);
-        const parentMid = pNodes.length >= 2 
-          ? (pNodes[0].x + pNodes[1].x) / 2 
-          : pNodes.length === 1 
-          ? pNodes[0].x 
-          : 600;
-
-        let clusterLeft = parentMid - totalClusterWidth / 2;
-        group.forEach(u => {
-          u.placedLeft = clusterLeft;
-          clusterLeft += u.width + HORIZONTAL_GAP;
-        });
-      });
-
-      // Left-to-right pass to eliminate overlap between adjacent sibling clusters
-      for (let i = 1; i < unitLayouts.length; i++) {
-        const prev = unitLayouts[i - 1];
-        const curr = unitLayouts[i];
-        const minLeft = prev.placedLeft + prev.width + HORIZONTAL_GAP;
-        if (curr.placedLeft < minLeft) {
-          const shift = minLeft - curr.placedLeft;
-          // If this unit shifted, shift all subsequent units in the row
-          for (let k = i; k < unitLayouts.length; k++) {
-            unitLayouts[k].placedLeft += shift;
           }
         }
       }
 
-      // Re-center parent nodes if their children cluster expanded wider than them
-      siblingGroups.forEach((group, parentKey) => {
-        if (parentKey === 'none') return;
-        const pIds = parentKey.split('---');
-        const pNodes = pIds.map(id => nodes[id]).filter(Boolean);
-        if (pNodes.length === 0) return;
+      const uWidth = foundSpouse ? (NODE_SIZE * 2 + SPOUSE_GAP) : NODE_SIZE;
 
-        const clusterMinX = group[0].placedLeft;
-        const clusterMaxX = group[group.length - 1].placedLeft + group[group.length - 1].width;
-        const clusterMidX = (clusterMinX + clusterMaxX) / 2;
+      const unit: FamilyUnit = {
+        id: member.id,
+        primaryMember: member,
+        spouse: foundSpouse,
+        generation: gen,
+        childrenUnits: [],
+        width: uWidth,
+        subtreeWidth: uWidth,
+        x: 0,
+        left: 0
+      };
 
-        const currentParentMidX = pNodes.length >= 2
-          ? (pNodes[0].x + pNodes[1].x) / 2
-          : pNodes[0].x;
-
-        const delta = clusterMidX - currentParentMidX;
-        if (Math.abs(delta) > 5) {
-          pNodes.forEach(pn => {
-            pn.x += delta;
-          });
-        }
-      });
-    }
-
-    // Place actual nodes in world coordinates
-    unitLayouts.forEach(({ unit, placedLeft }) => {
-      let mLeft = placedLeft;
-      unit.forEach((m) => {
-        const x = mLeft + NODE_SIZE / 2;
-        const totalDesc = countDescendants(m.id);
-        
-        nodes[m.id] = {
-          id: m.id,
-          member: m,
-          x,
-          y,
-          width: NODE_SIZE,
-          height: NODE_SIZE,
-          generation: gen,
-          isOldestGeneration: gen === 1,
-          totalDescendants: totalDesc,
-          spouses: []
-        };
-
-        mLeft += NODE_SIZE + SPOUSE_GAP;
-      });
+      unitMap.set(unit.id, unit);
+      memberToUnitId.set(member.id, unit.id);
+      if (foundSpouse) {
+        memberToUnitId.set(foundSpouse.id, unit.id);
+      }
     });
   });
 
-  // Post-processing adjustment: resolve any upper-generation node overlaps caused by expanding child clusters
-  sortedGenerations.forEach(gen => {
-    const genNodes = Object.values(nodes)
-      .filter(n => (effectiveGenMap.get(n.id) || n.generation) === gen)
-      .sort((a, b) => a.x - b.x);
-
-    for (let i = 1; i < genNodes.length; i++) {
-      const prev = genNodes[i - 1];
-      const curr = genNodes[i];
-      // If they are spouses, minimum gap is NODE_SIZE + SPOUSE_GAP
-      // If they are siblings/different families, minimum gap is NODE_SIZE + HORIZONTAL_GAP
-      const isSpouse = prev.member.spouses && prev.member.spouses.some(s => s.spouseId === curr.id);
-      const minDistance = isSpouse ? (NODE_SIZE + SPOUSE_GAP) : (NODE_SIZE + HORIZONTAL_GAP);
-
-      if (curr.x - prev.x < minDistance) {
-        const pushX = minDistance - (curr.x - prev.x);
-        for (let k = i; k < genNodes.length; k++) {
-          genNodes[k].x += pushX;
+  // B. Link parent units to children units
+  unitMap.forEach(childUnit => {
+    const pIds = childUnit.primaryMember.parentIds;
+    if (pIds && pIds.length > 0) {
+      for (const pId of pIds) {
+        const parentUnitId = memberToUnitId.get(pId);
+        if (parentUnitId && unitMap.has(parentUnitId)) {
+          const parentUnit = unitMap.get(parentUnitId)!;
+          if (!parentUnit.childrenUnits.includes(childUnit)) {
+            parentUnit.childrenUnits.push(childUnit);
+            childUnit.parentUnitId = parentUnit.id;
+          }
+          break;
         }
       }
+    }
+  });
+
+  // Sort children units by birth order
+  unitMap.forEach(unit => {
+    unit.childrenUnits.sort((a, b) => (a.primaryMember.order || 1) - (b.primaryMember.order || 1));
+  });
+
+  // C. Bottom-up pass: calculate subtree width for every unit
+  const computeSubtreeWidth = (unit: FamilyUnit): number => {
+    if (unit.childrenUnits.length === 0) {
+      unit.subtreeWidth = unit.width;
+      return unit.subtreeWidth;
+    }
+
+    let totalChildrenW = 0;
+    unit.childrenUnits.forEach((child, idx) => {
+      const cW = computeSubtreeWidth(child);
+      totalChildrenW += cW;
+      if (idx > 0) totalChildrenW += HORIZONTAL_GAP;
+    });
+
+    unit.subtreeWidth = Math.max(unit.width, totalChildrenW);
+    return unit.subtreeWidth;
+  };
+
+  // Find root units (units without parentUnitId)
+  const rootUnits: FamilyUnit[] = [];
+  unitMap.forEach(unit => {
+    if (!unit.parentUnitId) {
+      rootUnits.push(unit);
+    }
+  });
+
+  rootUnits.sort((a, b) => (a.generation - b.generation) || (a.primaryMember.order || 1) - (b.primaryMember.order || 1));
+  rootUnits.forEach(root => computeSubtreeWidth(root));
+
+  // D. Top-down pass: assign horizontal X coordinates
+  const positionUnitSubtree = (unit: FamilyUnit, startX: number) => {
+    // Center the unit inside its allocated subtree block
+    const blockCenter = startX + unit.subtreeWidth / 2;
+    unit.x = blockCenter;
+    unit.left = blockCenter - unit.width / 2;
+
+    if (unit.childrenUnits.length > 0) {
+      let childrenTotalW = 0;
+      unit.childrenUnits.forEach((c, i) => {
+        childrenTotalW += c.subtreeWidth;
+        if (i > 0) childrenTotalW += HORIZONTAL_GAP;
+      });
+
+      let currentChildX = blockCenter - childrenTotalW / 2;
+      unit.childrenUnits.forEach(child => {
+        positionUnitSubtree(child, currentChildX);
+        currentChildX += child.subtreeWidth + HORIZONTAL_GAP;
+      });
+    }
+  };
+
+  // Position all root units centered in the world
+  let totalRootWidth = 0;
+  rootUnits.forEach((root, idx) => {
+    totalRootWidth += root.subtreeWidth;
+    if (idx > 0) totalRootWidth += HORIZONTAL_GAP;
+  });
+
+  let currentRootX = 600 - totalRootWidth / 2;
+  rootUnits.forEach(root => {
+    positionUnitSubtree(root, currentRootX);
+    currentRootX += root.subtreeWidth + HORIZONTAL_GAP;
+  });
+
+  // E. Convert placed FamilyUnits into LayoutNodes
+  unitMap.forEach(unit => {
+    const y = generationYMap.get(unit.generation) || (140 + (unit.generation - 1) * VERTICAL_LEVEL_GAP);
+    const primaryX = unit.left + NODE_SIZE / 2;
+    const totalDescPrimary = countDescendants(unit.primaryMember.id);
+
+    nodes[unit.primaryMember.id] = {
+      id: unit.primaryMember.id,
+      member: unit.primaryMember,
+      x: primaryX,
+      y,
+      width: NODE_SIZE,
+      height: NODE_SIZE,
+      generation: unit.generation,
+      isOldestGeneration: unit.generation === 1,
+      totalDescendants: totalDescPrimary,
+      spouses: []
+    };
+
+    if (unit.spouse) {
+      const spouseX = unit.left + NODE_SIZE + SPOUSE_GAP + NODE_SIZE / 2;
+      const totalDescSpouse = countDescendants(unit.spouse.id);
+
+      nodes[unit.spouse.id] = {
+        id: unit.spouse.id,
+        member: unit.spouse,
+        x: spouseX,
+        y,
+        width: NODE_SIZE,
+        height: NODE_SIZE,
+        generation: unit.generation,
+        isOldestGeneration: unit.generation === 1,
+        totalDescendants: totalDescSpouse,
+        spouses: []
+      };
     }
   });
 
