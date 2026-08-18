@@ -143,6 +143,30 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     gallery: initialMember?.gallery || []
   });
 
+  const initFatherId = initialParents.find(id => familyData.members[id]?.gender === 'male') || '';
+  const initMotherId = initialParents.find(id => familyData.members[id]?.gender === 'female') || '';
+
+  const [selectedFatherId, setSelectedFatherId] = useState<string>(initFatherId);
+  const [selectedMotherId, setSelectedMotherId] = useState<string>(initMotherId);
+
+  const handleFatherChange = (newFatherId: string) => {
+    setSelectedFatherId(newFatherId);
+    const newParents = [newFatherId, selectedMotherId].filter(Boolean);
+    setFormData(prev => ({
+      ...prev,
+      parentIds: newParents
+    }));
+  };
+
+  const handleMotherChange = (newMotherId: string) => {
+    setSelectedMotherId(newMotherId);
+    const newParents = [selectedFatherId, newMotherId].filter(Boolean);
+    setFormData(prev => ({
+      ...prev,
+      parentIds: newParents
+    }));
+  };
+
   const [optimizationStatus, setOptimizationStatus] = useState<string | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -670,7 +694,47 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           {/* 4. Garis Silsilah & Hubungan Orang Tua */}
           <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-gold)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Users size={15} /> Garis Silsilah & Hubungan Orang Tua
+              <Users size={15} /> Hubungan Orang Tua (Ayah & Ibu)
+            </div>
+
+            <div className="form-grid-2" style={{ marginBottom: 12 }}>
+              {/* Pilihan Ayah */}
+              <div className="form-group">
+                <label className="form-label">Ayah Kandung / Angkat</label>
+                <select
+                  value={selectedFatherId}
+                  onChange={(e) => handleFatherChange(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">-- Tidak Ada / Belum Ditentukan --</option>
+                  {allOtherMembers
+                    .filter((m) => m.gender === 'male')
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.fullName} {m.nickname ? `("${m.nickname}")` : ''} (Gen {m.generation || 1})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Pilihan Ibu */}
+              <div className="form-group">
+                <label className="form-label">Ibu Kandung / Angkat</label>
+                <select
+                  value={selectedMotherId}
+                  onChange={(e) => handleMotherChange(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">-- Tidak Ada / Belum Ditentukan --</option>
+                  {allOtherMembers
+                    .filter((m) => m.gender === 'female')
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.fullName} {m.nickname ? `("${m.nickname}")` : ''} (Gen {m.generation || 1})
+                      </option>
+                    ))}
+                </select>
+              </div>
             </div>
 
             <div className="form-grid-2">
@@ -787,7 +851,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: 18, borderRadius: 'var(--radius-md)', border: '1.5px solid rgba(245, 158, 11, 0.4)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-gold)', display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <Baby size={16} /> Urutan Kelahiran Anak ({childrenList.length} Anak)
+                  <Baby size={16} /> Urutan Kelahiran & Mapping Pasangan Anak ({childrenList.length} Anak)
                 </div>
                 <span style={{ fontSize: 11, color: '#38bdf8', fontWeight: 600 }}>
                   ✨ Drag & Drop untuk Mengatur Urutan
@@ -795,7 +859,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
               </div>
               
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                Tarik dan geser posisi anak (atau gunakan tombol panah) untuk mengatur urutan anak pertama (kiri) hingga anak terakhir (kanan) di bagan pohon keluarga.
+                Tarik dan geser posisi anak untuk mengatur urutan kelahiran, serta tentukan pasangan mana yang menjadi orang tua kandung dari masing-masing anak.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -860,6 +924,52 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                             {getChildOrderLabel(index, childrenList.length)}
                           </span>
                         </div>
+
+                        {/* Mapping Pasangan Orang Tua untuk Anak Ini */}
+                        {formData.spouses && formData.spouses.length > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                              {formData.gender === 'female' ? 'Ayah:' : 'Ibu:'}
+                            </span>
+                            <select
+                              value={(() => {
+                                const spouseIds = formData.spouses?.map((s) => s.spouseId) || [];
+                                const matched = child.parentIds?.find((pId) => spouseIds.includes(pId));
+                                return matched || '';
+                              })()}
+                              onChange={(e) => {
+                                const chosenSpouseId = e.target.value;
+                                const remainingParents = (child.parentIds || []).filter(
+                                  (pId) => pId !== formData.id && !(formData.spouses || []).some((s) => s.spouseId === pId)
+                                );
+                                const newParentIds = [formData.id!];
+                                if (chosenSpouseId) newParentIds.push(chosenSpouseId);
+                                remainingParents.forEach((pId) => {
+                                  if (!newParentIds.includes(pId)) newParentIds.push(pId);
+                                });
+
+                                const updated = [...childrenList];
+                                updated[index] = {
+                                  ...updated[index],
+                                  parentIds: newParentIds
+                                };
+                                setChildrenList(updated);
+                              }}
+                              className="form-select"
+                              style={{ fontSize: 11.5, padding: '2px 8px', height: 26, background: 'rgba(15, 23, 42, 0.9)' }}
+                            >
+                              <option value="">-- Hanya {formData.nickname || (formData.fullName ? formData.fullName.split(' ')[0] : 'Orang Tua Ini')} --</option>
+                              {formData.spouses.map((sp) => {
+                                const spMember = familyData.members[sp.spouseId];
+                                return (
+                                  <option key={sp.spouseId} value={sp.spouseId}>
+                                    💍 {spMember ? spMember.fullName : sp.spouseId}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        )}
                       </div>
 
                       {/* Reorder Buttons (Up & Down for Mobile / Desktop) */}
