@@ -32,7 +32,6 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   // Drag tracking
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const viewportStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const touchDistanceRef = useRef<number | null>(null);
   const isPointerDownRef = useRef(false);
 
   // Compute LOD level based on zoom scale
@@ -161,9 +160,132 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     return () => container.removeEventListener('wheel', handleWheel);
   }, [viewport.scale, zoomAt]);
 
-  // Mouse & Touch Dragging Handlers
+  // Non-passive Touch Handlers for smooth mobile gestures (pinch-to-zoom and two-finger pan)
+  const touchStateRef = useRef<{
+    initialDist: number | null;
+    initialScale: number;
+    initialMidpoint: { x: number; y: number };
+    initialViewport: { x: number; y: number };
+  }>({
+    initialDist: null,
+    initialScale: 1,
+    initialMidpoint: { x: 0, y: 0 },
+    initialViewport: { x: 0, y: 0 }
+  });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleTouchStartNative = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section')) {
+        return;
+      }
+
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+        const midX = (touch1.clientX + touch2.clientX) / 2;
+        const midY = (touch1.clientY + touch2.clientY) / 2;
+
+        touchStateRef.current = {
+          initialDist: Math.max(dist, 1),
+          initialScale: viewport.scale,
+          initialMidpoint: { x: midX, y: midY },
+          initialViewport: { x: viewport.x, y: viewport.y }
+        };
+        setIsDragging(true);
+      } else if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        isPointerDownRef.current = true;
+        dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+        viewportStartRef.current = { x: viewport.x, y: viewport.y };
+        setIsDragging(true);
+      }
+    };
+
+    const handleTouchMoveNative = (e: TouchEvent) => {
+      if (e.touches.length === 2 && touchStateRef.current.initialDist !== null) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+        const currentMidX = (touch1.clientX + touch2.clientX) / 2;
+        const currentMidY = (touch1.clientY + touch2.clientY) / 2;
+
+        const { initialDist, initialScale, initialMidpoint, initialViewport } = touchStateRef.current;
+        const scaleMultiplier = currentDist / initialDist;
+        const targetScale = Math.max(minScale, Math.min(maxScale, initialScale * scaleMultiplier));
+
+        const containerRect = container.getBoundingClientRect();
+        const initPointX = initialMidpoint.x - containerRect.left;
+        const initPointY = initialMidpoint.y - containerRect.top;
+
+        // World coordinate pinned under the initial midpoint
+        const worldX = (initPointX - initialViewport.x) / initialScale;
+        const worldY = (initPointY - initialViewport.y) / initialScale;
+
+        // Account for simultaneous translation of the pinch midpoint
+        const deltaMidX = currentMidX - initialMidpoint.x;
+        const deltaMidY = currentMidY - initialMidpoint.y;
+
+        const nextX = initPointX - worldX * targetScale + deltaMidX;
+        const nextY = initPointY - worldY * targetScale + deltaMidY;
+
+        setViewport({
+          x: nextX,
+          y: nextY,
+          scale: targetScale
+        });
+      } else if (e.touches.length === 1 && isPointerDownRef.current) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - dragStartRef.current.x;
+        const deltaY = touch.clientY - dragStartRef.current.y;
+
+        setViewport((prev) => ({
+          ...prev,
+          x: viewportStartRef.current.x + deltaX,
+          y: viewportStartRef.current.y + deltaY
+        }));
+      }
+    };
+
+    const handleTouchEndNative = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        touchStateRef.current.initialDist = null;
+      }
+      if (e.touches.length === 0) {
+        isPointerDownRef.current = false;
+        setIsDragging(false);
+      } else if (e.touches.length === 1) {
+        // Reset single finger drag starting anchor
+        const touch = e.touches[0];
+        dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+        viewportStartRef.current = { x: viewport.x, y: viewport.y };
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStartNative, { passive: false });
+    container.addEventListener('touchmove', handleTouchMoveNative, { passive: false });
+    container.addEventListener('touchend', handleTouchEndNative);
+    container.addEventListener('touchcancel', handleTouchEndNative);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStartNative);
+      container.removeEventListener('touchmove', handleTouchMoveNative);
+      container.removeEventListener('touchend', handleTouchEndNative);
+      container.removeEventListener('touchcancel', handleTouchEndNative);
+    };
+  }, [viewport.scale, viewport.x, viewport.y, minScale, maxScale]);
+
+  // Mouse Dragging Handlers
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if (e.pointerType === 'touch') return; // Handled by native touch listeners
+    if (e.button !== 0) return;
     
     const target = e.target as HTMLElement;
     if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section')) {
@@ -177,6 +299,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return; // Handled by native touch listeners
     if (!isPointerDownRef.current) return;
 
     const deltaX = e.clientX - dragStartRef.current.x;
@@ -189,39 +312,10 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     }));
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return;
     isPointerDownRef.current = false;
     setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      touchDistanceRef.current = dist;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && touchDistanceRef.current !== null) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const ratio = dist / touchDistanceRef.current;
-      touchDistanceRef.current = dist;
-
-      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-      zoomAt(viewport.scale * ratio, midX, midY);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchDistanceRef.current = null;
   };
 
   return {
@@ -241,10 +335,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
       onPointerDown: handlePointerDown,
       onPointerMove: handlePointerMove,
       onPointerUp: handlePointerUp,
-      onPointerLeave: handlePointerUp,
-      onTouchStart: handleTouchStart,
-      onTouchMove: handleTouchMove,
-      onTouchEnd: handleTouchEnd
+      onPointerLeave: handlePointerUp
     }
   };
 }
