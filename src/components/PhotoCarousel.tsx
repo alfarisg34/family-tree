@@ -70,7 +70,7 @@ export const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
             src={currentPhoto.url}
             alt={currentPhoto.caption || 'Foto Keluarga'}
             className="carousel-slide-img"
-            style={isDeceased ? { filter: 'var(--sepia-filter)' } : undefined}
+            style={isDeceased && currentPhoto.id === 'main-avatar' ? { filter: 'var(--sepia-filter)' } : undefined}
             loading="lazy"
           />
 
