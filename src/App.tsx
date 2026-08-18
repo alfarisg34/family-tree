@@ -62,6 +62,7 @@ export const App: React.FC = () => {
   const {
     viewport,
     lodLevel,
+    maxVisibleGeneration,
     isDragging,
     containerRef,
     zoomIn,
@@ -88,6 +89,29 @@ export const App: React.FC = () => {
   // Admin Login Modal State
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
 
+  // Keyboard Shortcuts (F to fit, Esc to deselect, + / - to zoom)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+        return;
+      }
+      if (e.key === 'f' || e.key === 'F') {
+        fitView(layout.bounds);
+      } else if (e.key === 'Escape') {
+        setSelectedMemberId(null);
+        setHighlightedMemberId(null);
+      } else if (e.key === '+' || e.key === '=') {
+        zoomIn();
+      } else if (e.key === '-') {
+        zoomOut();
+      } else if (e.key === '0') {
+        resetView();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fitView, resetView, zoomIn, zoomOut, layout.bounds]);
+
   // Auto-fit on slug switch or first load
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -99,7 +123,6 @@ export const App: React.FC = () => {
   // Handle clicking a node on the tree
   const handleNodeClick = (node: LayoutNode) => {
     setSelectedMemberId(node.id);
-    setHighlightedMemberId(node.id);
   };
 
   // Fly to a member from search or relationship chip
@@ -194,6 +217,7 @@ export const App: React.FC = () => {
           layout={layout}
           viewport={viewport}
           lodLevel={lodLevel}
+          maxVisibleGeneration={maxVisibleGeneration}
           selectedNodeId={selectedMemberId}
           highlightedNodeId={highlightedMemberId}
           isAdmin={isAdmin}

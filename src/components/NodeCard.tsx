@@ -6,6 +6,8 @@ import { Plus, UserPlus, Heart } from 'lucide-react';
 interface NodeCardProps {
   node: LayoutNode;
   lodLevel: LODLevel;
+  viewportScale?: number;
+  hasHiddenDescendants?: boolean;
   isSelected?: boolean;
   isHighlighted?: boolean;
   isAdmin?: boolean;
@@ -16,6 +18,8 @@ interface NodeCardProps {
 export const NodeCard: React.FC<NodeCardProps> = ({
   node,
   lodLevel,
+  viewportScale = 0.85,
+  hasHiddenDescendants = false,
   isSelected = false,
   isHighlighted = false,
   isAdmin = false,
@@ -27,6 +31,14 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   const isAdopted = member.relationshipToParents === 'adopted';
 
   const ageBadgeText = getMemberAgeBadgeText(member);
+
+  // Dynamic scale compensation:
+  // When zoomed out, node scales up to 2.1x so it maintains a prominent, clear, standard visual size on screen.
+  // When zoomed in, node scales down to ~0.72x so all adjacent emerging nodes fit comfortably on screen.
+  const adaptiveScale = React.useMemo(() => {
+    const raw = 1 / Math.pow(viewportScale || 0.85, 0.68);
+    return Math.min(2.1, Math.max(0.72, raw));
+  }, [viewportScale]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -46,11 +58,14 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       <div
         className={`tree-node-card ${isSelected ? 'is-selected' : ''}`}
         style={{
-          transform: isHighlighted ? 'scale(1.18)' : undefined
+          transform: isHighlighted 
+            ? `scale(${adaptiveScale * 1.16})` 
+            : `scale(${adaptiveScale})`,
+          transformOrigin: 'center center'
         }}
       >
-        {lodLevel === 'macro' && node.totalDescendants > 0 && (
-          <div className="node-descendant-pill" title={`${node.totalDescendants} Keturunan`}>
+        {(hasHiddenDescendants || (lodLevel === 'macro' && node.totalDescendants > 0)) && (
+          <div className="node-descendant-pill" title={`${node.totalDescendants} Keturunan (Perbesar untuk melihat cabang)`}>
             +{node.totalDescendants}
           </div>
         )}

@@ -161,7 +161,36 @@ body {
   align-items: center;
   pointer-events: auto;
   cursor: pointer;
-  transition: filter 0.25s ease;
+  animation: nodeFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: filter 0.25s ease, opacity 0.3s ease;
+}
+
+@keyframes nodeFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -44%) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.tree-edge-group {
+  animation: edgeFadeIn 0.35s ease forwards;
+}
+
+@keyframes edgeFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tree-generation-line {
+  animation: edgeFadeIn 0.35s ease forwards;
 }
 
 .tree-node-card {

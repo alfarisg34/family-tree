@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { TreeLayout, LayoutNode, LODLevel, ViewportState } from '../types/family';
 import { NodeCard } from './NodeCard';
 
@@ -6,6 +6,7 @@ interface TreeCanvasProps {
   layout: TreeLayout;
   viewport: ViewportState;
   lodLevel: LODLevel;
+  maxVisibleGeneration?: number;
   selectedNodeId: string | null;
   highlightedNodeId: string | null;
   isAdmin: boolean;
@@ -17,6 +18,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   layout,
   viewport,
   lodLevel,
+  maxVisibleGeneration = Infinity,
   selectedNodeId,
   highlightedNodeId,
   isAdmin,
@@ -24,6 +26,31 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   onQuickAdd
 }) => {
   const { nodes, edges, bounds, generationLevels } = layout;
+
+  // Progressive Hierarchical Level of Detail:
+  // Filter nodes & family lines based on maxVisibleGeneration
+  const visibleNodes = useMemo(() => {
+    const result: Record<string, LayoutNode> = {};
+    Object.entries(nodes).forEach(([id, node]) => {
+      if (node.generation <= maxVisibleGeneration) {
+        result[id] = node;
+      }
+    });
+    return result;
+  }, [nodes, maxVisibleGeneration]);
+
+  const visibleNodeIds = useMemo(() => new Set(Object.keys(visibleNodes)), [visibleNodes]);
+
+  const visibleEdges = useMemo(() => {
+    return edges.filter((edge) => {
+      // Both source and target nodes must be visible at current zoom level
+      return visibleNodeIds.has(edge.fromId) && visibleNodeIds.has(edge.toId);
+    });
+  }, [edges, visibleNodeIds]);
+
+  const visibleGenLevels = useMemo(() => {
+    return generationLevels.filter((lvl) => lvl.generation <= maxVisibleGeneration);
+  }, [generationLevels, maxVisibleGeneration]);
 
   const buildSvgPath = (points: Array<{ x: number; y: number }>): string => {
     if (points.length < 2) return '';
@@ -61,14 +88,14 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
           </filter>
         </defs>
 
-        {edges.map((edge) => {
+        {visibleEdges.map((edge) => {
           const pathD = buildSvgPath(edge.points);
           const isMarriageActive = edge.type === 'marriage-active';
           const isDivorced = edge.type === 'marriage-divorced';
           const isAdopted = edge.type === 'parent-child-adopted';
 
           return (
-            <g key={edge.id}>
+            <g key={edge.id} className="tree-edge-group">
               <path
                 d={pathD}
                 className={`tree-edge ${edge.type}`}
@@ -121,8 +148,9 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
             </g>
           );
         })}
+
         {/* Horizontal Generation Level Subtle Guide Lines */}
-        {generationLevels.map((lvl) => (
+        {visibleGenLevels.map((lvl) => (
           <line
             key={`lvl-line-${lvl.generation}`}
             x1={lvl.minX + 340}
@@ -132,12 +160,13 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
             stroke="rgba(245, 158, 11, 0.12)"
             strokeDasharray="4,6"
             strokeWidth={1.5}
+            className="tree-generation-line"
           />
         ))}
       </svg>
 
       {/* Generation Level Badges (Aligned in Straight Vertical Column on Left) */}
-      {generationLevels.map((lvl) => (
+      {visibleGenLevels.map((lvl) => (
         <div
           key={lvl.generation}
           className="generation-level-marker"
@@ -153,18 +182,25 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         </div>
       ))}
 
-      {Object.values(nodes).map((node) => (
-        <NodeCard
-          key={node.id}
-          node={node}
-          lodLevel={lodLevel}
-          isSelected={selectedNodeId === node.id}
-          isHighlighted={highlightedNodeId === node.id}
-          isAdmin={isAdmin}
-          onClick={onNodeClick}
-          onQuickAdd={onQuickAdd}
-        />
-      ))}
+      {/* Render Visible Nodes */}
+      {Object.values(visibleNodes).map((node) => {
+        const hasHiddenDescendants = node.totalDescendants > 0 && maxVisibleGeneration <= node.generation;
+
+        return (
+          <NodeCard
+            key={node.id}
+            node={node}
+            lodLevel={lodLevel}
+            viewportScale={viewport.scale}
+            hasHiddenDescendants={hasHiddenDescendants}
+            isSelected={selectedNodeId === node.id}
+            isHighlighted={highlightedNodeId === node.id}
+            isAdmin={isAdmin}
+            onClick={onNodeClick}
+            onQuickAdd={onQuickAdd}
+          />
+        );
+      })}
     </div>
   );
 };
