@@ -27,7 +27,9 @@ export interface FamilyMember {
   id: string;
   fullName: string;
   nickname?: string;
-  title?: string; // Gelar (e.g. H., Hj., Dr., S.Kom)
+  titlePrefix?: string; // Gelar Depan (misal: Dr., H., Hj., R.M., Prof., Ir., K.H.)
+  titleSuffix?: string; // Gelar Belakang (misal: S.Kom., M.T., Ph.D., S.T., S.H., M.Sc.)
+  title?: string; // Legacy fallback gelar
   gender: Gender;
   generation: number; // 1 = Buyut/Leluhur, 2 = Kakek/Nenek, 3 = Orang Tua, 4 = Anak, 5 = Cucu, dst.
   
@@ -124,4 +126,35 @@ export interface ViewportState {
   x: number;
   y: number;
   scale: number;
+}
+
+/**
+ * Helper to format a member's complete official name with prefix and suffix titles
+ */
+export function formatMemberFullName(member?: Partial<FamilyMember> | null): string {
+  if (!member || !member.fullName) return '';
+  
+  const hasStructuredTitle = member.titlePrefix !== undefined || member.titleSuffix !== undefined;
+  
+  let prefix = '';
+  let suffix = '';
+
+  if (hasStructuredTitle) {
+    if (member.titlePrefix && member.titlePrefix.trim()) {
+      prefix = `${member.titlePrefix.trim()} `;
+    }
+    if (member.titleSuffix && member.titleSuffix.trim()) {
+      suffix = `, ${member.titleSuffix.trim()}`;
+    }
+  } else if (member.title && member.title.trim()) {
+    // Legacy fallback
+    const t = member.title.trim();
+    if (t.startsWith('S.') || t.startsWith('M.') || t.startsWith('Ph') || t.startsWith('B.')) {
+      suffix = `, ${t}`;
+    } else {
+      prefix = `${t} `;
+    }
+  }
+
+  return `${prefix}${member.fullName.trim()}${suffix}`;
 }

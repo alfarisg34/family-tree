@@ -2,12 +2,25 @@ import { getSupabaseClient } from '../utils/supabaseClient';
 import type { FamilyData, FamilyMember } from '../types/family';
 import { getInitialFamilyDataBySlug } from '../data/sampleFamily';
 
+// Parse legacy title string into prefix/suffix
+function parseLegacyTitle(titleStr?: string): { prefix?: string; suffix?: string } {
+  if (!titleStr || !titleStr.trim()) return {};
+  const t = titleStr.trim();
+  if (t.startsWith('S.') || t.startsWith('M.') || t.startsWith('Ph') || t.startsWith('B.')) {
+    return { suffix: t };
+  }
+  return { prefix: t };
+}
+
 // Map database row to FamilyMember TypeScript model
 function mapDbRowToMember(row: any): FamilyMember {
+  const legacy = parseLegacyTitle(row.title);
   return {
     id: row.id,
     fullName: row.full_name,
     nickname: row.nickname || undefined,
+    titlePrefix: row.title_prefix || legacy.prefix || undefined,
+    titleSuffix: row.title_suffix || legacy.suffix || undefined,
     title: row.title || undefined,
     gender: row.gender || 'male',
     generation: row.generation || 1,
@@ -36,11 +49,13 @@ function mapDbRowToMember(row: any): FamilyMember {
 
 // Map FamilyMember TypeScript model to database row
 function mapMemberToDbRow(member: FamilyMember, treeId?: string): Record<string, any> {
+  const combinedTitle = [member.titlePrefix, member.titleSuffix].filter(Boolean).join(' ') || member.title || null;
+
   const row: Record<string, any> = {
     id: member.id,
     full_name: member.fullName,
     nickname: member.nickname || null,
-    title: member.title || null,
+    title: combinedTitle,
     gender: member.gender,
     generation: member.generation,
     birth_date: member.birthDate || null,
@@ -211,7 +226,6 @@ export async function fetchFamilyDataFromSupabase(slug: string = 'keluargabanisu
         .single();
 
       if (createTreeErr) {
-        console.warn('Could not insert new tree in family_trees, trying fallback without slug:', createTreeErr.message);
         delete insertPayload.slug;
         const { data: fallbackTree } = await supabase
           .from('family_trees')
@@ -284,7 +298,7 @@ export async function fetchFamilyDataFromSupabase(slug: string = 'keluargabanisu
 }
 
 /**
- * Save / Upsert a single family member to Supabase
+ * Save / Upsert a single family member to Supabase with automatic schema error resilience
  */
 export async function saveMemberToSupabase(member: FamilyMember, treeId?: string): Promise<boolean> {
   const supabase = getSupabaseClient();
@@ -292,11 +306,28 @@ export async function saveMemberToSupabase(member: FamilyMember, treeId?: string
 
   try {
     const row = mapMemberToDbRow(member, treeId);
-    const { error } = await supabase.from('family_members').upsert(row);
+    
+    // First try standard upsert
+    let { error } = await supabase.from('family_members').upsert(row);
+
+    // If there's an error about non-existent columns, sanitize and retry
+    if (error && error.message && error.message.includes('column')) {
+      console.warn('Retrying upsert with sanitized core fields:', error.message);
+      const safeRow = { ...row };
+      delete safeRow.title_prefix;
+      delete safeRow.title_suffix;
+      delete safeRow.slug;
+      
+      const retryResult = await supabase.from('family_members').upsert(safeRow);
+      error = retryResult.error;
+    }
+
     if (error) {
       console.error('Error saving member to Supabase:', error.message);
       return false;
     }
+
+    console.log(`✓ Member ${member.fullName} (${member.id}) saved to Supabase successfully.`);
     return true;
   } catch (err) {
     console.error('Failed to save member to Supabase:', err);

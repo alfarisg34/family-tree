@@ -1,7 +1,11 @@
 import React from 'react';
-import type { FamilyMember, FamilyData } from '../types/family';
+import {
+  type FamilyMember,
+  type FamilyData,
+  formatMemberFullName
+} from '../types/family';
 import { PhotoCarousel } from './PhotoCarousel';
-import { formatDateID, calculateAge, getGenerationLabel } from '../utils/dateUtils';
+import { formatDateID, calculateAge, getGenerationLabel, getWhatsAppUrl } from '../utils/dateUtils';
 import {
   X,
   Calendar,
@@ -14,7 +18,8 @@ import {
   Edit,
   Trash2,
   Flower2,
-  User
+  User,
+  MessageCircle
 } from 'lucide-react';
 
 interface MemberDetailModalProps {
@@ -120,8 +125,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           {/* Name & Primary Badges */}
           <div className="modal-name-group">
             <h2 className="modal-full-name">
-              {member.title ? `${member.title} ` : ''}
-              {member.fullName}
+              {formatMemberFullName(member)}
             </h2>
 
             <div className="modal-nickname-title">
@@ -233,13 +237,47 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               </div>
             )}
 
-            {/* Kontak Telepon */}
+            {/* Kontak Telepon & WhatsApp */}
             {member.phone && (
               <div className="attribute-item">
-                <Phone size={18} className="attribute-icon" />
+                <Phone size={18} className="attribute-icon" style={{ color: '#22c55e' }} />
                 <div>
                   <div className="attribute-label">Kontak / WhatsApp</div>
-                  <div className="attribute-value">{member.phone}</div>
+                  <a
+                    href={getWhatsAppUrl(member.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="whatsapp-direct-badge"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      textDecoration: 'none',
+                      marginTop: 2
+                    }}
+                    title={`Kirim pesan WhatsApp ke ${member.fullName}`}
+                  >
+                    <span className="attribute-value" style={{ color: '#f8fafc', fontWeight: 700 }}>
+                      {member.phone}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        background: 'rgba(34, 197, 94, 0.18)',
+                        border: '1px solid rgba(34, 197, 94, 0.45)',
+                        color: '#4ade80',
+                        padding: '2px 9px',
+                        borderRadius: 'var(--radius-full)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontWeight: 600,
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <MessageCircle size={13} /> Chat WA ↗
+                    </span>
+                  </a>
                 </div>
               </div>
             )}
@@ -324,9 +362,11 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                         <div>
                           <div className="relation-chip-name">{sp.fullName}</div>
                           <div className="relation-chip-role">
-                            {isDiv
-                              ? `💔 Mantan Pasangan (${divorceDate ? `Cerai ${divorceDate.split('-')[0]}` : 'Bercerai'})`
-                              : `💍 Pasangan Menikah (${marriageDate ? marriageDate.split('-')[0] : ''})`}
+                            {status === 'divorced' || status === 'separated'
+                              ? `💔 Mantan ${sp.gender === 'female' ? 'Istri' : 'Suami'}${divorceDate ? ` (${divorceDate.split('-')[0]})` : ''}`
+                              : status === 'widowed'
+                              ? `🎗️ ${sp.gender === 'female' ? 'Istri (Almarhumah)' : 'Suami (Almarhum)'}`
+                              : `💍 ${sp.gender === 'female' ? 'Istri' : 'Suami'}${marriageDate ? ` (${marriageDate.split('-')[0]})` : ''}`}
                           </div>
                         </div>
                       </div>

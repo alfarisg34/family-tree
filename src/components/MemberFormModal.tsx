@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
-import type {
-  FamilyMember,
-  FamilyData,
-  Gender,
-  ParentRelationType,
-  MarriageStatus,
-  SpouseRelation,
-  GalleryPhoto
+import {
+  type FamilyMember,
+  type FamilyData,
+  type Gender,
+  type ParentRelationType,
+  type MarriageStatus,
+  type SpouseRelation,
+  type GalleryPhoto,
+  formatMemberFullName
 } from '../types/family';
 import { uploadImageToSupabaseStorage } from '../services/supabaseService';
 import { optimizeImage, formatBytes } from '../utils/imageOptimizer';
+import { getWhatsAppUrl } from '../utils/dateUtils';
 import {
   X,
   Upload,
@@ -22,7 +24,8 @@ import {
   ChevronUp,
   ChevronDown,
   Baby,
-  ListOrdered
+  ListOrdered,
+  MessageCircle
 } from 'lucide-react';
 
 interface MemberFormModalProps {
@@ -96,11 +99,25 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     }
   }
 
+  let initPrefix = initialMember?.titlePrefix ?? '';
+  let initSuffix = initialMember?.titleSuffix ?? '';
+
+  if (!initPrefix && !initSuffix && initialMember?.title) {
+    const t = initialMember.title.trim();
+    if (t.startsWith('S.') || t.startsWith('M.') || t.startsWith('Ph') || t.startsWith('B.')) {
+      initSuffix = t;
+    } else {
+      initPrefix = t;
+    }
+  }
+
   const [formData, setFormData] = useState<Partial<FamilyMember>>({
     id: initialMember?.id || 'mem-' + Date.now(),
     fullName: initialMember?.fullName || '',
     nickname: initialMember?.nickname || '',
-    title: initialMember?.title || '',
+    titlePrefix: initPrefix,
+    titleSuffix: initSuffix,
+    title: '',
     gender: defaultGender,
     generation: defaultGen,
     birthDate: initialMember?.birthDate || '',
@@ -195,7 +212,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           id: photoId,
           url: uploadedUrl || res.dataUrl,
           caption: 'Foto Kenangan',
-          date: new Date().getFullYear().toString()
+          date: '' // Kosong secara default, bisa diisi oleh admin
         });
       }
 
@@ -204,12 +221,21 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         gallery: [...(prev.gallery || []), ...newPhotos]
       }));
 
-      setOptimizationStatus(`✓ Berhasil menambahkan ${newPhotos.length} foto galeri optimal!`);
+      setOptimizationStatus(`✓ Berhasil menambahkan ${newPhotos.length} foto galeri!`);
     } catch (err) {
       console.error(err);
     } finally {
       setIsOptimizing(false);
     }
+  };
+
+  const handleUpdateGalleryPhoto = (photoId: string, field: 'caption' | 'date', value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      gallery: (prev.gallery || []).map((p) =>
+        p.id === photoId ? { ...p, [field]: value } : p
+      )
+    }));
   };
 
   const handleRemoveGalleryPhoto = (photoId: string) => {
@@ -305,7 +331,14 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
       return;
     }
 
-    onSave(formData as FamilyMember, childrenList);
+    const payloadToSave: FamilyMember = {
+      ...(formData as FamilyMember),
+      titlePrefix: formData.titlePrefix?.trim() || '',
+      titleSuffix: formData.titleSuffix?.trim() || '',
+      title: ''
+    };
+
+    onSave(payloadToSave, childrenList);
     onClose();
   };
 
@@ -390,31 +423,52 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             </div>
           </div>
 
-          {/* 1. Informasi Pokok */}
+          {/* 1. Informasi Pokok & Gelar */}
+          <div className="form-group">
+            <label className="form-label">Nama Lengkap *</label>
+            <input
+              type="text"
+              required
+              placeholder="Contoh: Alfari Sidnan Ghilmana"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              className="form-input"
+            />
+          </div>
+
           <div className="form-grid-2">
             <div className="form-group">
-              <label className="form-label">Nama Lengkap *</label>
+              <label className="form-label">Gelar Depan</label>
               <input
                 type="text"
-                required
-                placeholder="Contoh: Raden Mas Sastrowardoyo"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                placeholder="Contoh: Dr. / Hj. / R.M. / Prof. / Ir."
+                value={formData.titlePrefix || ''}
+                onChange={(e) => setFormData({ ...formData, titlePrefix: e.target.value })}
                 className="form-input"
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Gelar (Depan / Belakang)</label>
+              <label className="form-label">Gelar Belakang</label>
               <input
                 type="text"
-                placeholder="Contoh: R.M. / S.T. / Drh. / Hj."
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Contoh: S.Kom. / M.T. / Ph.D. / S.T."
+                value={formData.titleSuffix || ''}
+                onChange={(e) => setFormData({ ...formData, titleSuffix: e.target.value })}
                 className="form-input"
               />
             </div>
           </div>
+
+          {/* Live Preview Format Nama Resmi */}
+          {formData.fullName && (
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-glass)', fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Format Tampilan Nama Resmi:</span>
+              <span style={{ color: 'var(--text-gold)', fontWeight: 700, fontSize: 13.5 }}>
+                {formatMemberFullName(formData)}
+              </span>
+            </div>
+          )}
 
           <div className="form-grid-2">
             <div className="form-group">
@@ -477,63 +531,92 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {formData.spouses.map((sp, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      gap: 10,
-                      alignItems: 'center',
-                      background: 'rgba(15, 23, 42, 0.6)',
-                      padding: 10,
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--border-glass)'
-                    }}
-                  >
-                    <select
-                      value={sp.spouseId}
-                      onChange={(e) => handleUpdateSpouse(idx, 'spouseId', e.target.value)}
-                      className="form-select"
-                      style={{ flex: 2, fontSize: 12.5 }}
-                    >
-                      {allOtherMembers.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.fullName} ({m.gender === 'female' ? 'Perempuan' : 'Laki-laki'})
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={sp.status}
-                      onChange={(e) => handleUpdateSpouse(idx, 'status', e.target.value as MarriageStatus)}
-                      className="form-select"
-                      style={{ flex: 1.5, fontSize: 12.5 }}
-                    >
-                      <option value="married">💍 Menikah</option>
-                      <option value="divorced">💔 Bercerai</option>
-                      <option value="separated">Berpisah</option>
-                      <option value="widowed">Pasangan Wafat</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSpouse(idx)}
+                {formData.spouses.map((sp, idx) => {
+                  const isDiv = sp.status === 'divorced' || sp.status === 'separated';
+                  return (
+                    <div
+                      key={idx}
                       style={{
-                        background: 'rgba(239, 68, 68, 0.2)',
-                        border: '1px solid rgba(239, 68, 68, 0.4)',
-                        color: '#f87171',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '6px 8px',
-                        cursor: 'pointer',
                         display: 'flex',
-                        alignItems: 'center'
+                        flexDirection: 'column',
+                        gap: 8,
+                        background: 'rgba(15, 23, 42, 0.65)',
+                        padding: 12,
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border-glass)'
                       }}
-                      title="Hapus Relasi Pasangan"
                     >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        {/* Pilih Pasangan */}
+                        <div style={{ flex: 2 }}>
+                          <select
+                            value={sp.spouseId}
+                            onChange={(e) => handleUpdateSpouse(idx, 'spouseId', e.target.value)}
+                            className="form-select"
+                            style={{ width: '100%', fontSize: 12.5 }}
+                          >
+                            {allOtherMembers.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.fullName} ({m.gender === 'female' ? 'Perempuan' : 'Laki-laki'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Status Hubungan */}
+                        <div style={{ flex: 1.5 }}>
+                          <select
+                            value={sp.status}
+                            onChange={(e) => handleUpdateSpouse(idx, 'status', e.target.value as MarriageStatus)}
+                            className="form-select"
+                            style={{ width: '100%', fontSize: 12.5 }}
+                          >
+                            <option value="married">💍 Menikah</option>
+                            <option value="divorced">💔 Bercerai</option>
+                            <option value="separated">Berpisah</option>
+                            <option value="widowed">Pasangan Wafat</option>
+                          </select>
+                        </div>
+
+                        {/* Hapus Pasangan Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSpouse(idx)}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.18)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            color: '#f87171',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '7px 9px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                          title="Hapus Relasi Pasangan"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+
+                      {/* Input Tahun / Tanggal Pernikahan atau Perceraian */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6, paddingTop: 4, borderTop: '1px dashed rgba(255,255,255,0.08)' }}>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {isDiv ? '💔 Tahun / Tanggal Perceraian (Opsional):' : '💍 Tahun / Tanggal Pernikahan (Opsional):'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={isDiv ? "Contoh: 2021 / 15 Mei 2021" : "Contoh: 2020 / 12 Desember 2020"}
+                            value={isDiv ? (sp.divorceDate || '') : (sp.marriageDate || '')}
+                            onChange={(e) => handleUpdateSpouse(idx, isDiv ? 'divorceDate' : 'marriageDate', e.target.value)}
+                            className="form-input"
+                            style={{ padding: '6px 10px', fontSize: 12 }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -889,11 +972,17 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
               <label className="form-label">Nomor WhatsApp / HP</label>
               <input
                 type="text"
-                placeholder="Contoh: +62 812-3456-7890"
-                value={formData.phone}
+                placeholder="Contoh: 081290423000 / +6281290423000"
+                value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="form-input"
               />
+              {formData.phone && formData.phone.trim() && (
+                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <MessageCircle size={12} />
+                  <span>Tautan WA: <strong>{getWhatsAppUrl(formData.phone)}</strong></span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -908,12 +997,17 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             />
           </div>
 
-          {/* 7. Galeri Foto Karosel */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <label className="form-label" style={{ margin: 0 }}>
-                Galeri Foto Karosel ({formData.gallery?.length || 0} Foto)
-              </label>
+          {/* 7. Galeri Foto Karosel & Kenangan */}
+          <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div>
+                <label className="form-label" style={{ margin: 0, color: 'var(--text-gold)', fontWeight: 700 }}>
+                  Galeri Foto Kenangan ({formData.gallery?.length || 0} Foto)
+                </label>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  Tambahkan foto kenangan bersama keluarga, lengkap dengan judul dan tahun (opsional).
+                </div>
+              </div>
               <input
                 type="file"
                 ref={galleryInputRef}
@@ -926,50 +1020,91 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 type="button"
                 className="btn-nav-glass"
                 onClick={() => galleryInputRef.current?.click()}
-                style={{ fontSize: 11, padding: '4px 10px' }}
+                disabled={isOptimizing}
+                style={{ fontSize: 11.5, padding: '5px 12px' }}
               >
-                <Plus size={12} /> Tambah Foto Galeri
+                <Plus size={13} /> Tambah Foto Galeri
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {formData.gallery?.map((p) => (
-                <div
-                  key={p.id}
-                  style={{
-                    position: 'relative',
-                    width: 70,
-                    height: 70,
-                    borderRadius: 'var(--radius-sm)',
-                    overflow: 'hidden',
-                    border: '1px solid var(--border-glass)'
-                  }}
-                >
-                  <img src={p.url} alt="Galeri" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveGalleryPhoto(p.id)}
+            {(!formData.gallery || formData.gallery.length === 0) ? (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 0' }}>
+                Belum ada foto galeri tambahan. Klik "+ Tambah Foto Galeri" untuk mengunggah foto kenangan.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {formData.gallery.map((p, idx) => (
+                  <div
+                    key={p.id || idx}
                     style={{
-                      position: 'absolute',
-                      top: 2,
-                      right: 2,
-                      background: 'rgba(239, 68, 68, 0.85)',
-                      border: 'none',
-                      color: 'white',
-                      borderRadius: '50%',
-                      width: 18,
-                      height: 18,
                       display: 'flex',
+                      gap: 12,
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer'
+                      background: 'rgba(15, 23, 42, 0.65)',
+                      padding: 10,
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-glass)'
                     }}
                   >
-                    <X size={10} />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    {/* Thumbnail Image */}
+                    <div style={{ width: 56, height: 56, borderRadius: 'var(--radius-sm)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border-glass)' }}>
+                      <img src={p.url} alt="Galeri" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+
+                    {/* Inputs */}
+                    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, minWidth: 0 }}>
+                      <div className="form-group">
+                        <label style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          Keterangan / Momen Foto
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: Momen Wisuda S1 / Liburan Keluarga"
+                          value={p.caption || ''}
+                          onChange={(e) => handleUpdateGalleryPhoto(p.id, 'caption', e.target.value)}
+                          className="form-input"
+                          style={{ padding: '6px 10px', fontSize: 12 }}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label style={{ fontSize: 10.5, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          Tahun / Tanggal (Opsional)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: 2024 / Kosongkan"
+                          value={p.date || ''}
+                          onChange={(e) => handleUpdateGalleryPhoto(p.id, 'date', e.target.value)}
+                          className="form-input"
+                          style={{ padding: '6px 10px', fontSize: 12 }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Delete Photo Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGalleryPhoto(p.id)}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.35)',
+                        color: '#f87171',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '8px 10px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        alignSelf: 'center'
+                      }}
+                      title="Hapus Foto dari Galeri"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Submit */}

@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS public.family_members (
     tree_id UUID REFERENCES public.family_trees(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
     nickname TEXT,
+    title_prefix TEXT,
+    title_suffix TEXT,
     title TEXT,
     gender TEXT CHECK (gender IN ('male', 'female', 'other')) DEFAULT 'male',
     generation INTEGER NOT NULL DEFAULT 1,

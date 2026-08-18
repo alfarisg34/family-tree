@@ -12,6 +12,12 @@ const MONTH_NAMES_ID = [
  */
 export function parseDate(dateStr?: string): Date | null {
   if (!dateStr || dateStr.trim() === '') return null;
+  
+  // If it's just a 4 digit year e.g. "2000"
+  if (/^\d{4}$/.test(dateStr.trim())) {
+    return new Date(parseInt(dateStr.trim(), 10), 0, 1);
+  }
+
   const d = new Date(dateStr);
   if (!isNaN(d.getTime())) return d;
   
@@ -86,6 +92,37 @@ export function calculateAge(birthDateStr?: string, isDeceased: boolean = false,
 }
 
 /**
+ * Get compact age text badge for Node Card on tree canvas
+ * e.g. "26 Thn" for living members or "1912 — 1988 (76 Thn)" for deceased members
+ */
+export function getMemberAgeBadgeText(member: { birthDate?: string; isDeceased?: boolean; passedDate?: string }): string {
+  if (!member.birthDate && !member.passedDate) return '';
+  const ageInfo = calculateAge(member.birthDate, member.isDeceased, member.passedDate);
+  
+  if (member.isDeceased) {
+    const birthYear = member.birthDate ? member.birthDate.split('-')[0] : '';
+    const passedYear = member.passedDate ? member.passedDate.split('-')[0] : '';
+    if (birthYear && passedYear) {
+      return `${birthYear} — ${passedYear}${ageInfo.ageNumber !== null ? ` (${ageInfo.ageNumber} Thn)` : ''}`;
+    }
+    if (birthYear) return `Wafat (${birthYear})`;
+    if (ageInfo.ageNumber !== null) return `Wafat (${ageInfo.ageNumber} Thn)`;
+    return '🎗️ Wafat';
+  }
+
+  if (ageInfo.ageNumber !== null) {
+    return `${ageInfo.ageNumber} Thn`;
+  }
+
+  if (member.birthDate) {
+    const birthYear = member.birthDate.split('-')[0];
+    return `${birthYear}`;
+  }
+
+  return '';
+}
+
+/**
  * Get human-readable generation title in Indonesian family hierarchy
  */
 export function getGenerationLabel(gen: number): string {
@@ -109,4 +146,25 @@ export function getGenerationLabel(gen: number): string {
     default:
       return `Generasi ${gen}`;
   }
+}
+
+/**
+ * Convert raw phone number to valid direct WhatsApp URL (https://wa.me/628xxx)
+ */
+export function getWhatsAppUrl(phone?: string): string {
+  if (!phone || !phone.trim()) return '';
+  // Clean all non-digit characters except +
+  let cleaned = phone.replace(/[^0-9+]/g, '');
+  
+  if (cleaned.startsWith('+62')) {
+    cleaned = cleaned.substring(1);
+  } else if (cleaned.startsWith('62')) {
+    // Already 628...
+  } else if (cleaned.startsWith('0')) {
+    cleaned = '62' + cleaned.substring(1);
+  } else if (cleaned.startsWith('8')) {
+    cleaned = '62' + cleaned;
+  }
+  
+  return `https://wa.me/${cleaned}`;
 }

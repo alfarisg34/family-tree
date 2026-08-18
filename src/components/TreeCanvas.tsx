@@ -153,23 +153,18 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         </div>
       ))}
 
-      {Object.values(nodes).map((node) => {
-        const isVisibleInMacro = lodLevel !== 'macro' || node.isOldestGeneration || node.totalDescendants > 0;
-        if (!isVisibleInMacro) return null;
-
-        return (
-          <NodeCard
-            key={node.id}
-            node={node}
-            lodLevel={lodLevel}
-            isSelected={selectedNodeId === node.id}
-            isHighlighted={highlightedNodeId === node.id}
-            isAdmin={isAdmin}
-            onClick={onNodeClick}
-            onQuickAdd={onQuickAdd}
-          />
-        );
-      })}
+      {Object.values(nodes).map((node) => (
+        <NodeCard
+          key={node.id}
+          node={node}
+          lodLevel={lodLevel}
+          isSelected={selectedNodeId === node.id}
+          isHighlighted={highlightedNodeId === node.id}
+          isAdmin={isAdmin}
+          onClick={onNodeClick}
+          onQuickAdd={onQuickAdd}
+        />
+      ))}
     </div>
   );
 };

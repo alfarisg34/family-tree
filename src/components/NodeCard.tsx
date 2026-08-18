@@ -1,5 +1,6 @@
 import React from 'react';
 import type { LayoutNode, LODLevel } from '../types/family';
+import { getMemberAgeBadgeText } from '../utils/dateUtils';
 import { Plus, UserPlus, Heart } from 'lucide-react';
 
 interface NodeCardProps {
@@ -25,9 +26,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   const isDeceased = member.isDeceased;
   const isAdopted = member.relationshipToParents === 'adopted';
 
-  const birthYear = member.birthDate ? member.birthDate.split('-')[0] : '';
-  const passedYear = member.passedDate ? member.passedDate.split('-')[0] : '';
-  const yearText = birthYear ? (isDeceased ? `${birthYear} - ${passedYear || '†'}` : `l. ${birthYear}`) : '';
+  const ageBadgeText = getMemberAgeBadgeText(member);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,7 +87,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             </div>
           )}
 
-          {lodLevel !== 'macro' && member.gender && (
+          {member.gender && (
             <div
               className={`badge-gender ${member.gender}`}
               title={member.gender === 'male' ? 'Laki-laki' : 'Perempuan'}
@@ -98,40 +97,38 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           )}
         </div>
 
-        {lodLevel !== 'macro' && (
-          <div
-            className="node-labels-box"
-            style={{
-              borderColor: isHighlighted
-                ? 'var(--accent-gold)'
-                : isSelected
-                ? '#38bdf8'
-                : undefined
-            }}
-          >
-            <div className="node-primary-name" title={member.fullName}>
-              {member.nickname || member.fullName.split(' ')[0]}
-            </div>
-
-            {lodLevel === 'micro' && (
-              <>
-                <div className="node-sub-info" style={{ fontWeight: 600, color: '#e2e8f0' }}>
-                  {member.fullName}
-                </div>
-                {yearText && (
-                  <div className="node-sub-info" style={{ color: 'var(--text-gold)' }}>
-                    {yearText}
-                  </div>
-                )}
-                {member.occupation && (
-                  <div className="node-sub-info" style={{ fontSize: 9.5 }}>
-                    {member.occupation}
-                  </div>
-                )}
-              </>
-            )}
+        <div
+          className="node-labels-box"
+          style={{
+            borderColor: isHighlighted
+              ? 'var(--accent-gold)'
+              : isSelected
+              ? '#38bdf8'
+              : undefined
+          }}
+        >
+          <div className="node-primary-name" title={member.fullName}>
+            {member.nickname || member.fullName.split(' ')[0]}
           </div>
-        )}
+
+          {lodLevel === 'micro' && (
+            <>
+              <div className="node-sub-info" style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                {member.fullName}
+              </div>
+              {ageBadgeText && (
+                <div className="node-sub-info" style={{ color: 'var(--text-gold)', fontWeight: 600 }}>
+                  {ageBadgeText}
+                </div>
+              )}
+              {member.occupation && (
+                <div className="node-sub-info" style={{ fontSize: 9.5 }}>
+                  {member.occupation}
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         {/* 3 Quick Admin Add Action Buttons - always stable and accessible */}
         {isAdmin && onQuickAdd && (

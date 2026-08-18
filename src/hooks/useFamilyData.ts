@@ -298,6 +298,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
         id: newId,
         fullName: partialData.fullName || 'Nama Anggota Baru',
         nickname: partialData.nickname || '',
+        titlePrefix: partialData.titlePrefix || '',
+        titleSuffix: partialData.titleSuffix || '',
         title: partialData.title || '',
         gender: partialData.gender || 'female',
         generation,
