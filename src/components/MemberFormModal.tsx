@@ -30,6 +30,7 @@ import {
   Scissors
 } from 'lucide-react';
 import { ImageCropModal } from './ImageCropModal';
+import { SmartDatePicker } from './SmartDatePicker';
 
 interface SearchableMemberTagPickerProps {
   allMembers: FamilyMember[];
@@ -1003,11 +1004,11 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
               <div className="form-grid-2" style={{ marginTop: 10 }}>
                 <div className="form-group">
                   <label className="form-label">Tanggal Wafat</label>
-                  <input
-                    type="date"
+                  <SmartDatePicker
                     value={formData.passedDate}
-                    onChange={(e) => setFormData({ ...formData, passedDate: e.target.value })}
-                    className="form-input"
+                    onChange={(val) => setFormData({ ...formData, passedDate: val })}
+                    placeholder="Thn wafat"
+                    isDeceased={true}
                   />
                 </div>
 
@@ -1356,11 +1357,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Tanggal Lahir</label>
-              <input
-                type="date"
+              <SmartDatePicker
                 value={formData.birthDate}
-                onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                className="form-input"
+                onChange={(val) => setFormData({ ...formData, birthDate: val })}
+                placeholder="Thn lahir"
+                isDeceased={formData.isDeceased}
+                referenceDateForAge={formData.passedDate}
               />
             </div>
 
