@@ -122,12 +122,37 @@ export interface TreeLayout {
 }
 
 export type LODLevel = 'macro' | 'medium' | 'micro';
+export type ZoomTier = 'macro' | 'medium' | 'micro';
 
 export interface ViewportState {
   x: number;
   y: number;
   scale: number;
 }
+
+export interface ClusterNode {
+  id: string;
+  leaderNode: LayoutNode;
+  memberNodes: LayoutNode[];
+  count: number;
+  x: number;
+  y: number;
+  generation: number;
+  bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    width: number;
+    height: number;
+  };
+  generationSpread: {
+    minGen: number;
+    maxGen: number;
+  };
+  label: string;
+}
+
 
 /**
  * Helper to format a member's complete official name with prefix and suffix titles

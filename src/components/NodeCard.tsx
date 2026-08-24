@@ -1,12 +1,13 @@
 import React from 'react';
 import type { LayoutNode, LODLevel } from '../types/family';
-import { getMemberAgeBadgeText } from '../utils/dateUtils';
+import { getMemberAgeBadgeText, getGenerationLabel } from '../utils/dateUtils';
 import { Plus, UserPlus, Heart } from 'lucide-react';
 
 interface NodeCardProps {
   node: LayoutNode;
   lodLevel: LODLevel;
   viewportScale?: number;
+  isMobile?: boolean;
   hasHiddenDescendants?: boolean;
   isSelected?: boolean;
   isHighlighted?: boolean;
@@ -19,6 +20,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   node,
   lodLevel,
   viewportScale = 0.85,
+  isMobile = false,
   hasHiddenDescendants = false,
   isSelected = false,
   isHighlighted = false,
@@ -37,8 +39,10 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   // When zoomed in, node scales down to ~0.72x so all adjacent emerging nodes fit comfortably on screen.
   const adaptiveScale = React.useMemo(() => {
     const raw = 1 / Math.pow(viewportScale || 0.85, 0.68);
-    return Math.min(2.1, Math.max(0.72, raw));
-  }, [viewportScale]);
+    const maxScale = isMobile ? 2.3 : 2.1;
+    const minScale = isMobile ? 0.78 : 0.72;
+    return Math.min(maxScale, Math.max(minScale, raw));
+  }, [viewportScale, isMobile]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,13 +51,16 @@ export const NodeCard: React.FC<NodeCardProps> = ({
 
   return (
     <div
-      className={`tree-node-wrapper ${isAdmin ? 'admin-mode' : ''} ${isSelected ? 'is-selected' : ''}`}
+      className={`tree-node-wrapper zoom-tier-${lodLevel} ${isAdmin ? 'admin-mode' : ''} ${isSelected ? 'is-selected' : ''} ${isMobile ? 'is-mobile' : ''}`}
       style={{
         left: `${node.x}px`,
         top: `${node.y}px`,
         zIndex: isSelected ? 40 : isHighlighted ? 35 : 10
       }}
       onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      aria-label={`Anggota keluarga: ${member.fullName}, Generasi ${member.generation}`}
     >
       <div
         className={`tree-node-card ${isSelected ? 'is-selected' : ''}`}
@@ -64,12 +71,14 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           transformOrigin: 'center center'
         }}
       >
+        {/* Progressive disclosure indicator pill for descendants */}
         {(hasHiddenDescendants || (lodLevel === 'macro' && node.totalDescendants > 0)) && (
           <div className="node-descendant-pill" title={`${node.totalDescendants} Keturunan (Perbesar untuk melihat cabang)`}>
             +{node.totalDescendants}
           </div>
         )}
 
+        {/* Circular Avatar Frame */}
         <div
           className={`avatar-frame ${isDeceased ? 'deceased' : ''} ${isAdopted ? 'adopted' : ''}`}
           style={{
@@ -102,7 +111,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             </div>
           )}
 
-          {member.gender && (
+          {member.gender && lodLevel !== 'macro' && (
             <div
               className={`badge-gender ${member.gender}`}
               title={member.gender === 'male' ? 'Laki-laki' : 'Perempuan'}
@@ -112,6 +121,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           )}
         </div>
 
+        {/* Scale-Dependent Labels Box */}
         <div
           className="node-labels-box"
           style={{
@@ -122,10 +132,19 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               : undefined
           }}
         >
+          {/* Primary Name (Shown across all tiers) */}
           <div className="node-primary-name" title={member.fullName}>
             {member.nickname || member.fullName.split(' ')[0]}
           </div>
 
+          {/* Medium Tier: Show generation pill or age */}
+          {lodLevel === 'medium' && (
+            <div className="node-sub-info" style={{ fontSize: 9.5, opacity: 0.85 }}>
+              {getGenerationLabel(node.generation)}
+            </div>
+          )}
+
+          {/* Micro Tier: Rich progressive disclosure details */}
           {lodLevel === 'micro' && (
             <>
               <div className="node-sub-info" style={{ fontWeight: 600, color: '#e2e8f0' }}>
@@ -145,7 +164,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           )}
         </div>
 
-        {/* 3 Quick Admin Add Action Buttons - always stable and accessible */}
+        {/* 3 Quick Admin Add Action Buttons - available on hover or selection in admin mode */}
         {isAdmin && onQuickAdd && (
           <div
             className="node-quick-actions"

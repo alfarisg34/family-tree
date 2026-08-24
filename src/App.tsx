@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useFamilyData } from './hooks/useFamilyData';
 import { usePanZoom } from './hooks/usePanZoom';
 import { computeFamilyTreeLayout } from './utils/layoutEngine';
-import type { LayoutNode, FamilyMember } from './types/family';
+import type { LayoutNode, FamilyMember, ClusterNode } from './types/family';
 
 // Components
 import { Navbar } from './components/Navbar';
@@ -58,11 +58,12 @@ export const App: React.FC = () => {
     return computeFamilyTreeLayout(familyData);
   }, [familyData]);
 
-  // Pan & Zoom Map Engine
+  // Pan & Zoom Map Engine with Marker Clustering & Progressive Disclosure
   const {
     viewport,
     lodLevel,
-    maxVisibleGeneration,
+    isMobile,
+    containerSize,
     isDragging,
     containerRef,
     zoomIn,
@@ -70,6 +71,7 @@ export const App: React.FC = () => {
     resetView,
     fitView,
     flyToNode,
+    zoomToCluster,
     bindContainerEvents
   } = usePanZoom({
     bounds: layout.bounds,
@@ -189,6 +191,11 @@ export const App: React.FC = () => {
     }
   };
 
+  // Progressive disclosure click on cluster
+  const handleClusterClick = (cluster: ClusterNode) => {
+    zoomToCluster(cluster.bounds, 1.15);
+  };
+
   const selectedMember = selectedMemberId ? familyData.members[selectedMemberId] : null;
 
   return (
@@ -217,11 +224,14 @@ export const App: React.FC = () => {
           layout={layout}
           viewport={viewport}
           lodLevel={lodLevel}
-          maxVisibleGeneration={maxVisibleGeneration}
+          containerWidth={containerSize.width}
+          containerHeight={containerSize.height}
+          isMobile={isMobile}
           selectedNodeId={selectedMemberId}
           highlightedNodeId={highlightedMemberId}
           isAdmin={isAdmin}
           onNodeClick={handleNodeClick}
+          onClusterClick={handleClusterClick}
           onQuickAdd={handleQuickAdd}
         />
       </main>

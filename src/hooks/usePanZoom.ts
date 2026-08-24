@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { ViewportState, LODLevel } from '../types/family';
+import type { ViewportState, LODLevel, ZoomTier } from '../types/family';
+import { getZoomTier } from '../utils/clusterEngine';
 
 interface UsePanZoomOptions {
   minScale?: number;
@@ -28,33 +29,43 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800
+  });
+
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768 || ('ontouchstart' in window);
+  });
+
+  // Track container size & mobile status on resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setContainerSize({ width: rect.width, height: rect.height });
+        }
+      } else {
+        setContainerSize({ width: window.innerWidth, height: window.innerHeight });
+      }
+      setIsMobile(window.innerWidth < 768 || ('ontouchstart' in window));
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Drag tracking
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const viewportStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const isPointerDownRef = useRef(false);
 
-  // Compute LOD level based on zoom scale
-  const getLODLevel = (scale: number): LODLevel => {
-    if (scale < 0.55) return 'macro';
-    if (scale <= 1.05) return 'medium';
-    return 'micro';
-  };
-
-  // Progressive generation visibility threshold based on zoom scale:
-  // scale < 0.35  -> Gen 1 & 2 only (ancestor overview)
-  // scale < 0.48  -> Gen 1, 2, 3 (grandparents)
-  // scale < 0.62  -> Gen 1, 2, 3, 4 (parents & uncles)
-  // scale >= 0.62 -> All generations (Gen 5, 6, 7+ children, grandchildren, etc.)
-  const getMaxVisibleGeneration = (scale: number): number => {
-    if (scale < 0.35) return 2;
-    if (scale < 0.48) return 3;
-    if (scale < 0.62) return 4;
-    return Infinity;
-  };
-
-  const lodLevel: LODLevel = getLODLevel(viewport.scale);
-  const maxVisibleGeneration: number = getMaxVisibleGeneration(viewport.scale);
+  // Compute Zoom Tier / LOD Level
+  const lodLevel: LODLevel = getZoomTier(viewport.scale);
+  const zoomTier: ZoomTier = lodLevel;
 
   // Zoom towards a specific screen coordinate (or center if omitted)
   const zoomAt = useCallback((newScale: number, clientX?: number, clientY?: number) => {
@@ -69,7 +80,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
       const pointX = clientX !== undefined ? clientX - rect.left : rect.width / 2;
       const pointY = clientY !== undefined ? clientY - rect.top : rect.height / 2;
 
-      // Maintain world point under mouse cursor
+      // Maintain world point under cursor/touch
       const worldX = (pointX - prev.x) / prev.scale;
       const worldY = (pointY - prev.y) / prev.scale;
 
@@ -116,7 +127,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     const treeW = Math.max(400, b.maxX - b.minX);
     const treeH = Math.max(400, b.maxY - b.minY);
 
-    const padding = 100;
+    const padding = window.innerWidth < 768 ? 40 : 100;
     const scaleX = (rect.width - padding * 2) / treeW;
     const scaleY = (rect.height - padding * 2) / treeH;
     const fitScale = Math.max(minScale, Math.min(1.2, Math.min(scaleX, scaleY)));
@@ -132,7 +143,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   }, [bounds, minScale]);
 
   // Smooth animation fly to specific node
-  const flyToNode = useCallback((nodeX: number, nodeY: number, targetScale: number = 1.25) => {
+  const flyToNode = useCallback((nodeX: number, nodeY: number, targetScale: number = 1.15) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const targetX = rect.width / 2 - nodeX * targetScale;
@@ -141,6 +152,20 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     setViewport({
       x: targetX,
       y: targetY,
+      scale: targetScale
+    });
+  }, []);
+
+  // Progressive disclosure zoom to cluster bounds
+  const zoomToCluster = useCallback((clusterBounds: { minX: number; maxX: number; minY: number; maxY: number }, targetScale = 1.05) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = (clusterBounds.minX + clusterBounds.maxX) / 2;
+    const centerY = (clusterBounds.minY + clusterBounds.maxY) / 2;
+
+    setViewport({
+      x: rect.width / 2 - centerX * targetScale,
+      y: rect.height / 2 - centerY * targetScale,
       scale: targetScale
     });
   }, []);
@@ -160,7 +185,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     return () => container.removeEventListener('wheel', handleWheel);
   }, [viewport.scale, zoomAt]);
 
-  // Non-passive Touch Handlers for smooth mobile gestures (pinch-to-zoom and two-finger pan)
+  // Touch Handlers for mobile gestures (pinch-to-zoom and two-finger pan & swipe)
   const touchStateRef = useRef<{
     initialDist: number | null;
     initialScale: number;
@@ -179,7 +204,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
     const handleTouchStartNative = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section')) {
+      if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section, .cluster-hover-tooltip')) {
         return;
       }
 
@@ -228,7 +253,6 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
         const worldX = (initPointX - initialViewport.x) / initialScale;
         const worldY = (initPointY - initialViewport.y) / initialScale;
 
-        // Account for simultaneous translation of the pinch midpoint
         const deltaMidX = currentMidX - initialMidpoint.x;
         const deltaMidY = currentMidY - initialMidpoint.y;
 
@@ -262,7 +286,6 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
         isPointerDownRef.current = false;
         setIsDragging(false);
       } else if (e.touches.length === 1) {
-        // Reset single finger drag starting anchor
         const touch = e.touches[0];
         dragStartRef.current = { x: touch.clientX, y: touch.clientY };
         viewportStartRef.current = { x: viewport.x, y: viewport.y };
@@ -284,11 +307,11 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
   // Mouse Dragging Handlers
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType === 'touch') return; // Handled by native touch listeners
+    if (e.pointerType === 'touch') return;
     if (e.button !== 0) return;
     
     const target = e.target as HTMLElement;
-    if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section')) {
+    if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section, .cluster-hover-tooltip')) {
       return;
     }
 
@@ -299,7 +322,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (e.pointerType === 'touch') return; // Handled by native touch listeners
+    if (e.pointerType === 'touch') return;
     if (!isPointerDownRef.current) return;
 
     const deltaX = e.clientX - dragStartRef.current.x;
@@ -322,7 +345,9 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     viewport,
     setViewport,
     lodLevel,
-    maxVisibleGeneration,
+    zoomTier,
+    isMobile,
+    containerSize,
     isDragging,
     containerRef,
     zoomIn,
@@ -330,6 +355,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     resetView,
     fitView,
     flyToNode,
+    zoomToCluster,
     zoomAt,
     bindContainerEvents: {
       onPointerDown: handlePointerDown,

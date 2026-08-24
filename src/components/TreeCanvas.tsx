@@ -1,16 +1,21 @@
 import React, { useMemo } from 'react';
-import type { TreeLayout, LayoutNode, LODLevel, ViewportState } from '../types/family';
+import type { TreeLayout, LayoutNode, ClusterNode, LODLevel, ViewportState } from '../types/family';
 import { NodeCard } from './NodeCard';
+import { ClusterCard } from './ClusterCard';
+import { computeClusteredTree } from '../utils/clusterEngine';
 
 interface TreeCanvasProps {
   layout: TreeLayout;
   viewport: ViewportState;
   lodLevel: LODLevel;
-  maxVisibleGeneration?: number;
+  containerWidth?: number;
+  containerHeight?: number;
+  isMobile?: boolean;
   selectedNodeId: string | null;
   highlightedNodeId: string | null;
   isAdmin: boolean;
   onNodeClick: (node: LayoutNode) => void;
+  onClusterClick: (cluster: ClusterNode) => void;
   onQuickAdd: (sourceNode: LayoutNode, direction: 'parent' | 'child' | 'spouse' | 'sibling') => void;
 }
 
@@ -18,39 +23,37 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   layout,
   viewport,
   lodLevel,
-  maxVisibleGeneration = Infinity,
+  containerWidth = 1200,
+  containerHeight = 800,
+  isMobile = false,
   selectedNodeId,
   highlightedNodeId,
   isAdmin,
   onNodeClick,
+  onClusterClick,
   onQuickAdd
 }) => {
   const { nodes, edges, bounds, generationLevels } = layout;
 
-  // Progressive Hierarchical Level of Detail:
-  // Filter nodes & family lines based on maxVisibleGeneration
-  const visibleNodes = useMemo(() => {
-    const result: Record<string, LayoutNode> = {};
-    Object.entries(nodes).forEach(([id, node]) => {
-      if (node.generation <= maxVisibleGeneration) {
-        result[id] = node;
-      }
+  // Compute marker clustering & viewport distance culling (spatial virtualization)
+  const { visibleClusters, visibleNodes, visibleEdges, zoomTier } = useMemo(() => {
+    return computeClusteredTree({
+      nodes,
+      edges,
+      viewport,
+      containerWidth,
+      containerHeight,
+      isMobile
     });
-    return result;
-  }, [nodes, maxVisibleGeneration]);
+  }, [nodes, edges, viewport, containerWidth, containerHeight, isMobile]);
 
-  const visibleNodeIds = useMemo(() => new Set(Object.keys(visibleNodes)), [visibleNodes]);
-
-  const visibleEdges = useMemo(() => {
-    return edges.filter((edge) => {
-      // Both source and target nodes must be visible at current zoom level
-      return visibleNodeIds.has(edge.fromId) && visibleNodeIds.has(edge.toId);
-    });
-  }, [edges, visibleNodeIds]);
-
+  // Generation levels visible in current bounds
   const visibleGenLevels = useMemo(() => {
-    return generationLevels.filter((lvl) => lvl.generation <= maxVisibleGeneration);
-  }, [generationLevels, maxVisibleGeneration]);
+    if (zoomTier === 'macro') {
+      return generationLevels.filter((lvl) => lvl.generation <= 2);
+    }
+    return generationLevels;
+  }, [generationLevels, zoomTier]);
 
   const buildSvgPath = (points: Array<{ x: number; y: number }>): string => {
     if (points.length < 2) return '';
@@ -67,7 +70,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
   return (
     <div
-      className="world-layer"
+      className={`world-layer zoom-tier-${zoomTier} ${isMobile ? 'is-mobile' : ''}`}
       style={{
         transform: `translate3d(${viewport.x}px, ${viewport.y}px, 0) scale(${viewport.scale})`,
         width: `${bounds.width}px`,
@@ -88,6 +91,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
           </filter>
         </defs>
 
+        {/* Visible Culled & Cluster-Aware Edges */}
         {visibleEdges.map((edge) => {
           const pathD = buildSvgPath(edge.points);
           const isMarriageActive = edge.type === 'marriage-active';
@@ -102,7 +106,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 filter={isMarriageActive ? 'url(#glow-gold)' : undefined}
               />
 
-              {edge.midpoint && (isMarriageActive || isDivorced) && (
+              {edge.midpoint && (isMarriageActive || isDivorced) && zoomTier !== 'macro' && (
                 <g
                   transform={`translate(${edge.midpoint.x}, ${edge.midpoint.y})`}
                   className="edge-marker-icon"
@@ -124,7 +128,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 </g>
               )}
 
-              {edge.midpoint && isAdopted && lodLevel !== 'macro' && (
+              {edge.midpoint && isAdopted && zoomTier === 'micro' && (
                 <g
                   transform={`translate(${edge.midpoint.x}, ${edge.midpoint.y})`}
                   className="edge-marker-icon"
@@ -165,7 +169,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         ))}
       </svg>
 
-      {/* Generation Level Badges (Aligned in Straight Vertical Column on Left) */}
+      {/* Generation Level Badges */}
       {visibleGenLevels.map((lvl) => (
         <div
           key={lvl.generation}
@@ -182,25 +186,33 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         </div>
       ))}
 
-      {/* Render Visible Nodes */}
-      {Object.values(visibleNodes).map((node) => {
-        const hasHiddenDescendants = node.totalDescendants > 0 && maxVisibleGeneration <= node.generation;
+      {/* Render Clustered Marker Nodes (Progressive Disclosure) */}
+      {visibleClusters.map((cluster) => (
+        <ClusterCard
+          key={cluster.id}
+          cluster={cluster}
+          zoomTier={zoomTier}
+          viewportScale={viewport.scale}
+          isMobile={isMobile}
+          onClusterClick={onClusterClick}
+        />
+      ))}
 
-        return (
-          <NodeCard
-            key={node.id}
-            node={node}
-            lodLevel={lodLevel}
-            viewportScale={viewport.scale}
-            hasHiddenDescendants={hasHiddenDescendants}
-            isSelected={selectedNodeId === node.id}
-            isHighlighted={highlightedNodeId === node.id}
-            isAdmin={isAdmin}
-            onClick={onNodeClick}
-            onQuickAdd={onQuickAdd}
-          />
-        );
-      })}
+      {/* Render Visible Individual Nodes */}
+      {visibleNodes.map((node) => (
+        <NodeCard
+          key={node.id}
+          node={node}
+          lodLevel={lodLevel}
+          viewportScale={viewport.scale}
+          isMobile={isMobile}
+          isSelected={selectedNodeId === node.id}
+          isHighlighted={highlightedNodeId === node.id}
+          isAdmin={isAdmin}
+          onClick={onNodeClick}
+          onQuickAdd={onQuickAdd}
+        />
+      ))}
     </div>
   );
 };
