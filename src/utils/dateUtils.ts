@@ -124,25 +124,168 @@ export function getMemberAgeBadgeText(member: { birthDate?: string; isDeceased?:
 
 /**
  * Get human-readable generation title in Indonesian family hierarchy
+ * based on the root generation setting of the family tree
  */
-export function getGenerationLabel(gen: number): string {
+export function getGenerationLabel(
+  gen: number,
+  rootType: 'gantungsiwur' | 'udhegudheg' | 'wareng' | 'canggah' | 'buyut' | 'kakek' | 'orangtua' = 'buyut'
+): string {
+  if (rootType === 'gantungsiwur') {
+    switch (gen) {
+      case 1:
+        return 'Generasi I (Leluhur Gantung Siwur)';
+      case 2:
+        return 'Generasi II (Eyang Udheg-Udheg)';
+      case 3:
+        return 'Generasi III (Eyang Wareng)';
+      case 4:
+        return 'Generasi IV (Eyang Canggah / Moyang)';
+      case 5:
+        return 'Generasi V (Eyang Buyut / Uyut)';
+      case 6:
+        return 'Generasi VI (Kakek & Nenek)';
+      case 7:
+        return 'Generasi VII (Orang Tua & Paman/Bibi)';
+      case 8:
+        return 'Generasi VIII (Anak & Menantu)';
+      case 9:
+        return 'Generasi IX (Cucu & Keponakan)';
+      case 10:
+        return 'Generasi X (Cicit)';
+      case 11:
+        return 'Generasi XI (Piut / Wareng)';
+      default:
+        return `Generasi ${gen}`;
+    }
+  }
+
+  if (rootType === 'udhegudheg') {
+    switch (gen) {
+      case 1:
+        return 'Generasi I (Eyang Udheg-Udheg)';
+      case 2:
+        return 'Generasi II (Eyang Wareng)';
+      case 3:
+        return 'Generasi III (Eyang Canggah / Moyang)';
+      case 4:
+        return 'Generasi IV (Eyang Buyut / Uyut)';
+      case 5:
+        return 'Generasi V (Kakek & Nenek)';
+      case 6:
+        return 'Generasi VI (Orang Tua & Paman/Bibi)';
+      case 7:
+        return 'Generasi VII (Anak & Menantu)';
+      case 8:
+        return 'Generasi VIII (Cucu & Keponakan)';
+      case 9:
+        return 'Generasi IX (Cicit)';
+      case 10:
+        return 'Generasi X (Piut / Wareng)';
+      default:
+        return `Generasi ${gen}`;
+    }
+  }
+
+  if (rootType === 'wareng') {
+    switch (gen) {
+      case 1:
+        return 'Generasi I (Eyang Wareng / Baurekso)';
+      case 2:
+        return 'Generasi II (Eyang Canggah / Moyang)';
+      case 3:
+        return 'Generasi III (Eyang Buyut / Uyut)';
+      case 4:
+        return 'Generasi IV (Kakek & Nenek)';
+      case 5:
+        return 'Generasi V (Orang Tua & Paman/Bibi)';
+      case 6:
+        return 'Generasi VI (Anak & Menantu)';
+      case 7:
+        return 'Generasi VII (Cucu & Keponakan)';
+      case 8:
+        return 'Generasi VIII (Cicit)';
+      case 9:
+        return 'Generasi IX (Piut / Wareng)';
+      default:
+        return `Generasi ${gen}`;
+    }
+  }
+
+  if (rootType === 'canggah') {
+    switch (gen) {
+      case 1:
+        return 'Generasi I (Eyang Canggah / Moyang)';
+      case 2:
+        return 'Generasi II (Eyang Buyut / Uyut)';
+      case 3:
+        return 'Generasi III (Kakek & Nenek)';
+      case 4:
+        return 'Generasi IV (Orang Tua & Paman/Bibi)';
+      case 5:
+        return 'Generasi V (Anak & Menantu)';
+      case 6:
+        return 'Generasi VI (Cucu & Keponakan)';
+      case 7:
+        return 'Generasi VII (Cicit)';
+      case 8:
+        return 'Generasi VIII (Piut / Wareng)';
+      default:
+        return `Generasi ${gen}`;
+    }
+  }
+
+  if (rootType === 'kakek') {
+    switch (gen) {
+      case 1:
+        return 'Generasi I (Kakek & Nenek)';
+      case 2:
+        return 'Generasi II (Orang Tua & Paman/Bibi)';
+      case 3:
+        return 'Generasi III (Anak & Menantu)';
+      case 4:
+        return 'Generasi IV (Cucu & Keponakan)';
+      case 5:
+        return 'Generasi V (Cicit)';
+      case 6:
+        return 'Generasi VI (Piut / Wareng)';
+      default:
+        return `Generasi ${gen}`;
+    }
+  }
+
+  if (rootType === 'orangtua') {
+    switch (gen) {
+      case 1:
+        return 'Generasi I (Orang Tua / Ayah & Ibu)';
+      case 2:
+        return 'Generasi II (Anak & Menantu)';
+      case 3:
+        return 'Generasi III (Cucu & Keponakan)';
+      case 4:
+        return 'Generasi IV (Cicit)';
+      case 5:
+        return 'Generasi V (Piut / Wareng)';
+      default:
+        return `Generasi ${gen}`;
+    }
+  }
+
+  // Default: 'buyut' (Uyut Sukandi / Buyut)
   switch (gen) {
     case 1:
-      return 'Generasi I (Leluhur Tertua / Canggah)';
+      return 'Generasi I (Eyang Buyut / Uyut)';
     case 2:
-      return 'Generasi II (Eyang Buyut)';
+      return 'Generasi II (Kakek & Nenek)';
     case 3:
-      return 'Generasi III (Kakek & Nenek)';
+      return 'Generasi III (Orang Tua & Paman/Bibi)';
     case 4:
-      return 'Generasi IV (Orang Tua & Paman/Bibi)';
+      return 'Generasi IV (Anak & Menantu)';
     case 5:
-      return 'Generasi V (Anak & Menantu)';
+      return 'Generasi V (Cucu & Keponakan)';
     case 6:
-      return 'Generasi VI (Cucu & Keponakan)';
+      return 'Generasi VI (Cicit)';
     case 7:
-      return 'Generasi VII (Cicit)';
-    case 8:
-      return 'Generasi VIII (Piut / Wareng)';
+      return 'Generasi VII (Piut / Wareng)';
     default:
       return `Generasi ${gen}`;
   }
@@ -167,4 +310,28 @@ export function getWhatsAppUrl(phone?: string): string {
   }
   
   return `https://wa.me/${cleaned}`;
+}
+
+const ROOT_GEN_HIERARCHY: Array<'orangtua' | 'kakek' | 'buyut' | 'canggah' | 'wareng' | 'udhegudheg' | 'gantungsiwur'> = [
+  'orangtua',
+  'kakek',
+  'buyut',
+  'canggah',
+  'wareng',
+  'udhegudheg',
+  'gantungsiwur'
+];
+
+/**
+ * Promotes / steps up the root generation type by 1 level when a parent
+ * is added above Generation 1 (e.g. kakek -> buyut -> canggah -> wareng -> udhegudheg -> gantungsiwur)
+ */
+export function getNextOlderRootGenerationType(
+  current: 'gantungsiwur' | 'udhegudheg' | 'wareng' | 'canggah' | 'buyut' | 'kakek' | 'orangtua' = 'buyut'
+): 'gantungsiwur' | 'udhegudheg' | 'wareng' | 'canggah' | 'buyut' | 'kakek' | 'orangtua' {
+  const idx = ROOT_GEN_HIERARCHY.indexOf(current);
+  if (idx >= 0 && idx < ROOT_GEN_HIERARCHY.length - 1) {
+    return ROOT_GEN_HIERARCHY[idx + 1];
+  }
+  return current;
 }

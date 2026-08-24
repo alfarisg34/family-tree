@@ -1,11 +1,12 @@
 import React from 'react';
-import type { LayoutNode, LODLevel } from '../types/family';
+import type { LayoutNode, LODLevel, RootGenerationType } from '../types/family';
 import { getMemberAgeBadgeText, getGenerationLabel } from '../utils/dateUtils';
 import { Plus, UserPlus, Heart } from 'lucide-react';
 
 interface NodeCardProps {
   node: LayoutNode;
   lodLevel: LODLevel;
+  rootGenerationType?: RootGenerationType;
   viewportScale?: number;
   isMobile?: boolean;
   hasHiddenDescendants?: boolean;
@@ -19,6 +20,7 @@ interface NodeCardProps {
 export const NodeCard: React.FC<NodeCardProps> = ({
   node,
   lodLevel,
+  rootGenerationType = 'buyut',
   viewportScale = 0.85,
   isMobile = false,
   hasHiddenDescendants = false,
@@ -140,7 +142,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           {/* Medium Tier: Show generation pill or age */}
           {lodLevel === 'medium' && (
             <div className="node-sub-info" style={{ fontSize: 9.5, opacity: 0.85 }}>
-              {getGenerationLabel(node.generation)}
+              {getGenerationLabel(node.generation, rootGenerationType)}
             </div>
           )}
 

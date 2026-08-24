@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { TreeLayout, LayoutNode, ClusterNode, LODLevel, ViewportState } from '../types/family';
+import type { TreeLayout, LayoutNode, ClusterNode, LODLevel, ViewportState, RootGenerationType } from '../types/family';
 import { NodeCard } from './NodeCard';
 import { ClusterCard } from './ClusterCard';
 import { computeClusteredTree } from '../utils/clusterEngine';
@@ -8,6 +8,7 @@ interface TreeCanvasProps {
   layout: TreeLayout;
   viewport: ViewportState;
   lodLevel: LODLevel;
+  rootGenerationType?: RootGenerationType;
   containerWidth?: number;
   containerHeight?: number;
   isMobile?: boolean;
@@ -23,6 +24,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   layout,
   viewport,
   lodLevel,
+  rootGenerationType = 'buyut',
   containerWidth = 1200,
   containerHeight = 800,
   isMobile = false,
@@ -192,6 +194,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
           key={cluster.id}
           cluster={cluster}
           zoomTier={zoomTier}
+          rootGenerationType={rootGenerationType}
           viewportScale={viewport.scale}
           isMobile={isMobile}
           onClusterClick={onClusterClick}
@@ -204,6 +207,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
           key={node.id}
           node={node}
           lodLevel={lodLevel}
+          rootGenerationType={rootGenerationType}
           viewportScale={viewport.scale}
           isMobile={isMobile}
           isSelected={selectedNodeId === node.id}

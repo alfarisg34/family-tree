@@ -2046,3 +2046,87 @@ body {
   animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top right;
 }
+
+/* Tree Settings Modal & Generation Presets */
+.tree-settings-modal {
+  max-width: 580px;
+}
+
+.generation-preset-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.generation-preset-card {
+  background: rgba(30, 41, 59, 0.45);
+  border: 1.5px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.generation-preset-card:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(30, 41, 59, 0.7);
+  transform: translateY(-1px);
+}
+
+.generation-preset-card.is-selected {
+  border-color: var(--accent-gold);
+  background: rgba(245, 158, 11, 0.12);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+}
+
+.preset-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.preset-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.generation-preset-card.is-selected .preset-title {
+  color: var(--text-gold);
+}
+
+.preset-check-icon {
+  color: var(--accent-gold);
+}
+
+.preset-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.preset-preview-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.preset-pill {
+  font-size: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.generation-preset-card.is-selected .preset-pill {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  background: rgba(15, 23, 42, 0.95);
+}

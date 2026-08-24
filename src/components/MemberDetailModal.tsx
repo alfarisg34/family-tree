@@ -271,7 +271,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 {member.nickname && <span>Panggilan: "{member.nickname}"</span>}
                 
                 <span className="badge-tag-status generation">
-                  {getGenerationLabel(member.generation)}
+                  {getGenerationLabel(member.generation, familyData.rootGenerationType)}
                 </span>
 
                 {isDeceased && (

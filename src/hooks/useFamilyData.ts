@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { FamilyData, FamilyMember, ParentRelationType, MarriageStatus } from '../types/family';
+import type { FamilyData, FamilyMember, ParentRelationType, MarriageStatus, RootGenerationType } from '../types/family';
 import { getInitialFamilyDataBySlug } from '../data/sampleFamily';
+import { getNextOlderRootGenerationType } from '../utils/dateUtils';
 import { isSupabaseConfigured } from '../utils/supabaseClient';
 import {
   fetchFamilyDataFromSupabase,
@@ -208,6 +209,7 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
       let parentIds: string[] = [];
       let relationshipToParents: ParentRelationType = extraOptions?.relationshipType || 'biological';
       let calculatedSpouses: FamilyMember['spouses'] = [];
+      let updatedRootGenType = prev.rootGenerationType || 'buyut';
 
       if (relationDirection === 'parent') {
         const targetGen = (sourceMember.generation || 1) - 1;
@@ -225,6 +227,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
             }
           });
           generation = 1;
+          // Automatically step up / promote root generation hierarchy (e.g. kakek -> buyut -> canggah)
+          updatedRootGenType = getNextOlderRootGenerationType(prev.rootGenerationType || 'buyut');
         } else {
           generation = targetGen;
         }
@@ -336,6 +340,7 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
 
       return {
         ...prev,
+        rootGenerationType: updatedRootGenType,
         members: updatedMembers,
         updatedAt: new Date().toISOString()
       };
@@ -389,6 +394,20 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
     });
   };
 
+  const updateTreeMetadata = (metadata: { familyTreeName: string; description?: string; rootGenerationType?: RootGenerationType }) => {
+    setFamilyData((prev) => {
+      const updated = {
+        ...prev,
+        ...metadata,
+        updatedAt: new Date().toISOString()
+      };
+      if (isSupabaseConfigured()) {
+        syncEntireTreeToSupabase(updated, currentSlug);
+      }
+      return updated;
+    });
+  };
+
   const updateEntireFamilyData = (newData: FamilyData) => {
     setFamilyData(newData);
     if (isSupabaseConfigured()) {
@@ -406,6 +425,7 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
     saveMember,
     addRelative,
     deleteMember,
+    updateTreeMetadata,
     updateEntireFamilyData
   };
 }

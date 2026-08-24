@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import type { ClusterNode, ZoomTier } from '../types/family';
+import type { ClusterNode, ZoomTier, RootGenerationType } from '../types/family';
 import { Users, ZoomIn, ChevronRight } from 'lucide-react';
 import { getGenerationLabel } from '../utils/dateUtils';
 
 interface ClusterCardProps {
   cluster: ClusterNode;
-  zoomTier: ZoomTier;
+  zoomTier?: ZoomTier;
+  rootGenerationType?: RootGenerationType;
   viewportScale: number;
   isMobile?: boolean;
   onClusterClick: (cluster: ClusterNode) => void;
@@ -13,6 +14,7 @@ interface ClusterCardProps {
 
 export const ClusterCard: React.FC<ClusterCardProps> = ({
   cluster,
+  rootGenerationType = 'buyut',
   viewportScale,
   isMobile = false,
   onClusterClick
@@ -36,8 +38,8 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
   const remainingCount = Math.max(0, cluster.count - 1);
 
   const genRangeText = cluster.generationSpread.minGen === cluster.generationSpread.maxGen
-    ? getGenerationLabel(cluster.generationSpread.minGen)
-    : `${getGenerationLabel(cluster.generationSpread.minGen)} - ${getGenerationLabel(cluster.generationSpread.maxGen)}`;
+    ? getGenerationLabel(cluster.generationSpread.minGen, rootGenerationType)
+    : `${getGenerationLabel(cluster.generationSpread.minGen, rootGenerationType)} - ${getGenerationLabel(cluster.generationSpread.maxGen, rootGenerationType)}`;
 
   return (
     <div
@@ -137,7 +139,7 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
                   />
                   <div className="cluster-tooltip-member-info">
                     <span className="cluster-tooltip-name">{node.member.fullName}</span>
-                    <span className="cluster-tooltip-gen">{getGenerationLabel(node.generation)}</span>
+                    <span className="cluster-tooltip-gen">{getGenerationLabel(node.generation, rootGenerationType)}</span>
                   </div>
                 </div>
               ))}

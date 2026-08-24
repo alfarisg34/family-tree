@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Plus,
   ArrowLeft,
+  Settings,
   X
 } from 'lucide-react';
 
@@ -22,6 +23,7 @@ interface NavbarProps {
   onOpenAdminLogin: () => void;
   onLogoutAdmin: () => void;
   onOpenAddMember: () => void;
+  onOpenTreeSettings?: () => void;
   onFlyToMember: (memberId: string) => void;
 }
 
@@ -35,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAdminLogin,
   onLogoutAdmin,
   onOpenAddMember,
+  onOpenTreeSettings,
   onFlyToMember
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -482,6 +485,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {isAdmin ? (
               <>
+                {onOpenTreeSettings && (
+                  <button
+                    className="btn-nav-glass"
+                    onClick={onOpenTreeSettings}
+                    title="Pengaturan Nama Silsilah & Tingkat Generasi Tertua"
+                  >
+                    <Settings size={15} color="var(--accent-gold)" />
+                    <span className="btn-label-desktop">Pengaturan</span>
+                  </button>
+                )}
+
                 <button className="btn-nav-primary" onClick={onOpenAddMember} title="Tambah Anggota Keluarga Baru">
                   <UserPlus size={15} />
                   <span className="btn-label-desktop">+ Tambah Anggota</span>
@@ -494,7 +508,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   title="Keluar dari mode admin"
                 >
                   <ShieldAlert size={15} />
-                  <span className="btn-label-desktop">Admin (Keluar)</span>
+                  <span className="btn-label-desktop">Keluar</span>
                   <span className="btn-label-mobile">Keluar</span>
                 </button>
               </>

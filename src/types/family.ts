@@ -67,12 +67,22 @@ export interface FamilyMember {
   tags?: string[];
 }
 
+export type RootGenerationType =
+  | 'gantungsiwur'
+  | 'udhegudheg'
+  | 'wareng'
+  | 'canggah'
+  | 'buyut'
+  | 'kakek'
+  | 'orangtua';
+
 export interface FamilyData {
   id?: string;
   treeId?: string;
   slug?: string;
   familyTreeName: string;
   description?: string;
+  rootGenerationType?: RootGenerationType;
   members: Record<string, FamilyMember>;
   updatedAt: string;
 }

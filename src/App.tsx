@@ -13,6 +13,7 @@ import { LegendPanel } from './components/LegendPanel';
 import { MemberDetailModal } from './components/MemberDetailModal';
 import { MemberFormModal } from './components/MemberFormModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
+import { TreeSettingsModal } from './components/TreeSettingsModal';
 
 // Helper to extract clean slug from URL
 function getSlugFromUrl(): string {
@@ -50,7 +51,8 @@ export const App: React.FC = () => {
     logoutAdmin,
     saveMember,
     addRelative,
-    deleteMember
+    deleteMember,
+    updateTreeMetadata
   } = useFamilyData(currentSlug);
 
   // Compute graph layout
@@ -90,6 +92,7 @@ export const App: React.FC = () => {
 
   // Admin Login Modal State
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isTreeSettingsOpen, setIsTreeSettingsOpen] = useState(false);
 
   // Keyboard Shortcuts (F to fit, Esc to deselect, + / - to zoom)
   useEffect(() => {
@@ -211,6 +214,7 @@ export const App: React.FC = () => {
         onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
         onLogoutAdmin={logoutAdmin}
         onOpenAddMember={handleOpenAddMemberNavbar}
+        onOpenTreeSettings={() => setIsTreeSettingsOpen(true)}
         onFlyToMember={handleFlyToMember}
       />
 
@@ -224,6 +228,7 @@ export const App: React.FC = () => {
           layout={layout}
           viewport={viewport}
           lodLevel={lodLevel}
+          rootGenerationType={familyData.rootGenerationType}
           containerWidth={containerSize.width}
           containerHeight={containerSize.height}
           isMobile={isMobile}
@@ -294,6 +299,16 @@ export const App: React.FC = () => {
         <AdminLoginModal
           onLogin={loginAdmin}
           onClose={() => setIsAdminLoginOpen(false)}
+        />
+      )}
+
+      {/* Tree Settings Modal (Admin) */}
+      {isTreeSettingsOpen && (
+        <TreeSettingsModal
+          isOpen={isTreeSettingsOpen}
+          familyData={familyData}
+          onSave={updateTreeMetadata}
+          onClose={() => setIsTreeSettingsOpen(false)}
         />
       )}
     </div>

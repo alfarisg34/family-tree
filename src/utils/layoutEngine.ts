@@ -404,7 +404,7 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
 
     generationLevels.push({
       generation: gen,
-      name: getGenerationLabel(gen),
+      name: getGenerationLabel(gen, familyData.rootGenerationType),
       y: yPos - 30, // Level with center of avatars
       count: genNodes.length,
       minX: straightColumnX,
