@@ -5,11 +5,12 @@ import { Compass, ChevronDown } from 'lucide-react';
 interface MinimapProps {
   layout: TreeLayout;
   viewport: ViewportState;
+  containerSize: { width: number; height: number };
   onNavigate?: (worldX: number, worldY: number) => void;
 }
 
-export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, onNavigate }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, containerSize, onNavigate }) => {
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const canvasBoxRef = useRef<HTMLDivElement>(null);
   const [boxSize, setBoxSize] = useState({ width: 168, height: 92 });
 
@@ -43,8 +44,8 @@ export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, onNavigate }
   const scaleY = mapH / worldH;
   const mmScale = Math.min(scaleX, scaleY);
 
-  const screenW = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const screenH = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const screenW = containerSize.width;
+  const screenH = containerSize.height;
 
   const vpWorldX = -viewport.x / viewport.scale;
   const vpWorldY = -viewport.y / viewport.scale;
@@ -72,10 +73,10 @@ export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, onNavigate }
       <button
         className="minimap-pill-btn"
         onClick={() => setIsCollapsed(false)}
-        title="Buka Radar Peta Silsilah"
+        title="Buka Peta kecil Silsilah"
       >
         <Compass size={14} color="var(--accent-gold)" />
-        <span>Radar</span>
+        <span>Peta kecil</span>
         <span className="minimap-pill-count">{Object.keys(nodes).length}</span>
       </button>
     );
@@ -83,21 +84,22 @@ export const Minimap: React.FC<MinimapProps> = ({ layout, viewport, onNavigate }
 
   return (
     <div className="minimap-panel">
-      <div
+      <button
         className="minimap-header"
+        aria-label="Sembunyikan peta kecil"
         onClick={() => setIsCollapsed(true)}
         style={{ cursor: 'pointer' }}
-        title="Klik untuk menyembunyikan Radar"
+        title="Klik untuk menyembunyikan Peta kecil"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <Compass size={12} color="var(--accent-gold)" />
-          <span>Radar Peta</span>
+          <span>Peta kecil</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 9.5 }}>{Object.keys(nodes).length} Jiwa</span>
+          <span style={{ fontSize: 9.5 }}>{Object.keys(nodes).length} anggota</span>
           <ChevronDown size={12} color="var(--text-muted)" />
         </div>
-      </div>
+      </button>
 
       <div
         ref={canvasBoxRef}

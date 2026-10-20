@@ -1,78 +1,96 @@
-# 🌳 Interactive Family Tree Map Explorer
+# Silsilah Keluarga
 
-Website visualisasi silsilah pohon keluarga modern berbasis peta interaktif dengan navigasi geser (*pan*), perbesar (*zoom*), tingkat kedalaman detail (*Level of Detail* / LOD), galeri foto beroptimisasi otomatis, visualisasi status keluarga (wafat, bercerai, anak angkat), serta dukungan database **Supabase** dan deployment **Vercel**.
+Aplikasi silsilah keluarga berbasis React, TypeScript, dan Vite. Data keluarga, anggota, dan foto disimpan di PostgreSQL Neon melalui API server. Kredensial database tidak dikirim ke browser.
 
-![React](https://img.shields.io/badge/React-18-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
-![Vite](https://img.shields.io/badge/Vite-6-purple)
-![Supabase](https://img.shields.io/badge/Supabase-Database-emerald)
-![Vercel](https://img.shields.io/badge/Vercel-Deployment-black)
+## Fitur
 
----
+- Landing page berbahasa Indonesia untuk memperkenalkan fitur aplikasi.
+- Peta silsilah dengan geser, zoom, minimap, dan detail yang menyesuaikan tingkat zoom.
+- Pencarian anggota, profil, galeri foto, dan visualisasi hubungan keluarga.
+- Dashboard admin, pengelolaan keluarga dan anggota, serta salin tautan untuk dibagikan.
+- Login server dengan cookie HttpOnly. Semua perubahan database dan daftar seluruh keluarga memerlukan sesi admin.
 
-## ✨ Fitur Utama
+## Menjalankan lokal
 
-- 🗺️ **Peta Silsilah Interaktif (Pan & Zoom)**: Drag, scroll/pinch-to-zoom dengan radar minimap layaknya peta dunia RPG/Google Maps.
-- 🔍 **Level of Detail (LOD) Dinamis**:
-  - *Zoom Makro (<55%)*: Menampilkan hanya foto generasi leluhur tanpa teks agar bersih dan rapi.
-  - *Zoom Medium (55%–105%)*: Foto lingkaran memunculkan nama panggilan yang memudar masuk (*fade-in*).
-  - *Zoom Mikro (>105%)*: Menampilkan detail lengkap (nama lengkap, gelar, tahun kelahiran/wafat, karir).
-- 🎗️ **Visualisasi Anggota Wafat**: Foto otomatis berfilter **Sepia / Grayscale Vintage** dengan pita duka dan perhitungan usia saat berpulang.
-- 💔 **Garis Hubungan Perceraian**: Garis putus-putus merah (*dashed line*) dengan simbol pemisah, silsilah anak tetap terhubung rapi ke kedua orang tua.
-- 🌱 **Anak Angkat / Asuh**: Garis keturunan putus-putus berwarna cyan/teal dengan badge pembeda khusus.
-- 🖼️ **Modal Detail & Karosel Galeri**: Menampilkan atribut lengkap yang terisi (pendidikan, karir, domisili, kontak, kisah hidup) serta karosel multi-foto kenangan.
-- ⚡ **Optimisasi Foto Otomatis**: Kompresi foto pada perangkat (*client-side canvas compression*) menghemat ukuran berkas hingga >90% agar rendering 60 FPS tetap mulus.
-- 🛡️ **Dashboard Admin**: Autentikasi admin, penambahan relasi vertikal (orang tua / anak) dan horizontal (pasangan / saudara), export/import JSON.
-- ☁️ **Integrasi Supabase & Vercel**: Dukungan sinkronisasi database PostgreSQL Supabase dan konfigurasi SPA routing Vercel.
+Gunakan Node.js 24 untuk menjalankan aplikasi dan tes.
 
----
-
-## 🚀 Memulai (Quick Start)
-
-### 1. Instalasi & Menjalankan Lokal
-
-```bash
-# Clone repository
-git clone https://github.com/alfarisg34/family-tree.git
-cd family-tree
-
-# Install dependencies
+```sh
 npm install
+```
 
-# Jalankan server pengembangan
+Buat `.env.local` berdasarkan `.env.example`, lalu isi variabel **server** berikut:
+
+```dotenv
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
+ADMIN_PASSWORD=kata-sandi-admin-anda
+ADMIN_SESSION_SECRET=rahasia-acak-minimal-32-karakter
+```
+
+Gunakan URL pooled yang diberikan Neon. Jangan beri awalan `VITE_` pada kredensial server. `.env.local` diabaikan Git.
+
+```sh
+npm run db:setup
 npm run dev
 ```
 
-Buka peramban di `http://localhost:5173/`.
+Middleware Vite menjalankan `/api/data` di komputer lokal. `npm run preview` juga menyediakan API server untuk hasil build.
 
----
+## Halaman
 
-## 💾 Setup Database Supabase
+| Alamat | Fungsi |
+| --- | --- |
+| `/` | Pengenalan aplikasi; tidak menampilkan daftar atau tautan keluarga tertentu. |
+| `/admin/login` | Login menggunakan `ADMIN_PASSWORD`, tanpa username. |
+| `/admin` | Dashboard; dialihkan ke login jika sesi belum tersedia. |
+| `/manage` | Tambah keluarga, ubah informasi keluarga, tambah/edit anggota, salin tautan. Memerlukan login. |
+| `/<slug-keluarga>` | Peta keluarga yang dapat dibuka oleh penerima tautan dari admin. |
 
-1. Buka [Supabase Dashboard](https://supabase.com/dashboard) dan masuk ke **SQL Editor**.
-2. Salin seluruh isi dari file `supabase_schema.sql` dan jalankan (*Run*).
-3. Salin **Project URL** & **anon public API Key** dari menu *Project Settings > API*.
-4. Masukkan kredensial tersebut pada menu **Database** di navbar aplikasi atau buat file `.env`:
+Kata sandi lama tidak lagi diperiksa di frontend. Kata sandi aktif adalah nilai `ADMIN_PASSWORD` pada server. Sesi berlaku 12 jam. Login pada browser yang sudah digunakan akan diverifikasi kembali oleh server.
 
-```env
-VITE_SUPABASE_URL=https://xyzabcdefg.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+## Migrasi dari Supabase
+
+Aktifkan kembali proyek Supabase jika sedang paused. Isi variabel sumber pada `.env.local`:
+
+```dotenv
+SUPABASE_SOURCE_URL=https://PROJECT.supabase.co
+SUPABASE_SOURCE_KEY=kunci-dengan-akses-baca
 ```
 
-5. Klik tombol **"Unggah Silsilah ke Supabase"** di aplikasi untuk menyalin seluruh data ke database cloud Anda.
+```sh
+npm run db:migrate -- --dry-run
+npm run db:migrate
+npm run db:migrate -- --verify
+```
 
----
+Skrip mengambil seluruh halaman data sumber, menyimpan backup JSON di `backups/`, menyalin foto yang digunakan oleh profil dan galeri, lalu memeriksa hasil. Data Supabase tidak diubah. Foto dari URL eksternal seperti Unsplash tetap menggunakan URL asalnya.
 
-## 🌐 Deploy ke Vercel
+Migrasi berhenti jika ada alamat keluarga yang bertabrakan atau anggota yang tidak memiliki keluarga yang cocok. Migrasi juga berhenti jika keluarga tujuan sudah ada. Gunakan `--merge` hanya jika ingin memperbarui dan menggabungkan data sumber ke keluarga yang telah ada di Neon; anggota lain di Neon tetap dipertahankan.
 
-1. Buka [Vercel](https://vercel.com) dan impor repositori GitHub ini.
-2. Tambahkan **Environment Variables**:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-3. Klik **Deploy**!
+Backup JSON dapat digunakan sebagai sumber:
 
----
+```sh
+npm run db:migrate -- --backup backups/supabase-YYYY-MM-DD.json
+```
 
-## 🔑 Kredensial Admin Demo
+Format yang didukung: objek `{ family_trees, family_members }`, satu objek `FamilyData`, atau array `FamilyData`. Pemeriksaan `--verify` menggunakan backup Supabase terakhir dan tidak mengubah data keluarga.
 
-- **Password Admin**: `admin` atau `keluarga123`
+Foto disimpan sebagai data gambar pada tabel `family_assets`, lalu disajikan melalui API. Upload menerima JPEG, PNG, WebP, dan GIF dengan batas data URL 3,5 MB; formulir mengoptimalkan gambar sebelum upload.
+
+## Deploy ke Vercel
+
+1. Impor repository ke Vercel sebagai proyek Vite.
+2. Tambahkan `DATABASE_URL`, `ADMIN_PASSWORD`, dan `ADMIN_SESSION_SECRET` di Environment Variables untuk environment yang digunakan.
+3. Gunakan secret sesi yang sama pada seluruh instance server dalam satu environment.
+4. Jalankan `npm run db:setup` untuk database tujuan jika belum disiapkan, kemudian deploy.
+
+API berada di `api/data.mjs`; konfigurasi routing mempertahankan endpoint API dan meneruskan halaman aplikasi ke frontend. Variabel sumber Supabase hanya diperlukan untuk migrasi lokal, tidak perlu ditambahkan ke Vercel. Mengubah `.env.local` tidak otomatis memperbarui konfigurasi Vercel.
+
+## Validasi
+
+```sh
+npm test
+npm run lint
+npm run build
+```
+
+Tes memeriksa pengalihan halaman admin, sesi server, penolakan akses tanpa login, validasi data, hubungan pasangan, dan konversi data migrasi. Pemeriksaan Neon langsung dijalankan terpisah dengan `npm run db:migrate -- --verify`.

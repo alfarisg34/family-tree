@@ -1,4 +1,6 @@
+import { MemberAvatar } from './MemberAvatar';
 import React, { useState, useMemo } from 'react';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 import {
   type FamilyMember,
   type FamilyData,
@@ -141,6 +143,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   onDeleteMember
 }) => {
   const [expandedDescendantLevel, setExpandedDescendantLevel] = useState<number | null>(null);
+  const dialogRef = useAccessibleDialog(onClose);
   const isDeceased = member.isDeceased;
   const ageInfo = calculateAge(member.birthDate, member.isDeceased, member.passedDate);
 
@@ -245,7 +248,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content-card" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content-card" ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Profil ${member.fullName}`} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         {/* Header Hero Section */}
         <div className="modal-header-hero">
           <button className="modal-close-btn" onClick={onClose} title="Tutup Modal">
@@ -254,11 +257,9 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
           <div className="modal-profile-header-content">
             <div className="modal-avatar-wrapper">
-              <img
-                src={member.avatar}
-                alt={member.fullName}
+              <MemberAvatar src={member.avatar} name={member.fullName}
                 className={`modal-avatar-img ${isDeceased ? 'is-deceased' : ''}`}
-              />
+               />
             </div>
 
             {/* Name & Primary Badges */}
@@ -287,7 +288,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 )}
 
                 {member.relationshipToParents === 'foster' && (
-                  <span className="badge-tag-status adopted" style={{ borderColor: 'rgba(56, 189, 248, 0.4)', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)' }}>
+                  <span className="badge-tag-status adopted" style={{ borderColor: 'rgba(57, 124, 138, 0.4)', color: '#397c8a', background: 'rgba(57, 124, 138, 0.12)' }}>
                     🤝 Anak Asuh
                   </span>
                 )}
@@ -335,7 +336,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             {/* Status Wafat */}
             {isDeceased && (member.passedDate || member.passedPlace) && (
               <div className="attribute-item">
-                <Flower2 size={18} className="attribute-icon" style={{ color: '#94a3b8' }} />
+                <Flower2 size={18} className="attribute-icon" style={{ color: '#796b60' }} />
                 <div>
                   <div className="attribute-label">Berpulang / Wafat</div>
                   <div className="attribute-value">
@@ -349,7 +350,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             {/* Tempat Pemakaman */}
             {isDeceased && member.burialPlace && (
               <div className="attribute-item">
-                <MapPin size={18} className="attribute-icon" style={{ color: '#94a3b8' }} />
+                <MapPin size={18} className="attribute-icon" style={{ color: '#796b60' }} />
                 <div>
                   <div className="attribute-label">Tempat Peristirahatan</div>
                   <div className="attribute-value">{member.burialPlace}</div>
@@ -413,7 +414,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                     }}
                     title={`Kirim pesan WhatsApp ke ${member.fullName}`}
                   >
-                    <span className="attribute-value" style={{ color: '#f8fafc', fontWeight: 700 }}>
+                    <span className="attribute-value" style={{ color: '#3e3028', fontWeight: 700 }}>
                       {member.phone}
                     </span>
                     <span
@@ -452,9 +453,9 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
           {/* Biografi */}
           {member.bio && (
-            <div style={{ background: 'rgba(30, 41, 59, 0.3)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+            <div style={{ background: 'rgba(240, 228, 213, 0.3)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
               <div className="attribute-label" style={{ marginBottom: 6 }}>Kisah Hidup & Biografi</div>
-              <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#e2e8f0' }}>{member.bio}</p>
+              <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#58473d' }}>{member.bio}</p>
             </div>
           )}
 
@@ -478,12 +479,12 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
           {/* Statistik Keturunan & Trah Keluarga (Anak, Cucu, Cicit, dst.) */}
           {totalDescendantsCount > 0 && (
-            <div style={{ background: 'rgba(15, 23, 42, 0.65)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-md)', padding: 16 }}>
+            <div style={{ background: 'rgba(255, 253, 249, 0.65)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-md)', padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-gold)', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <Sparkles size={15} /> Silsilah Keturunan ({totalDescendantsCount} Jiwa)
                 </div>
-                <span style={{ fontSize: 11, background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 700 }}>
+                <span style={{ fontSize: 11, background: 'rgba(185, 95, 60, 0.15)', color: '#a14c30', border: '1px solid rgba(185, 95, 60, 0.3)', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 700 }}>
                   {descendantLevels.length} Generasi ke Bawah
                 </span>
               </div>
@@ -497,21 +498,21 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                       key={group.level}
                       onClick={() => setExpandedDescendantLevel(isExpanded ? null : group.level)}
                       style={{
-                        background: isExpanded ? 'rgba(245, 158, 11, 0.2)' : 'rgba(30, 41, 59, 0.5)',
+                        background: isExpanded ? 'rgba(185, 95, 60, 0.2)' : 'rgba(240, 228, 213, 0.5)',
                         border: isExpanded ? '1.5px solid var(--accent-gold)' : '1px solid var(--border-glass)',
                         borderRadius: 'var(--radius-sm)',
                         padding: '8px 10px',
                         textAlign: 'center',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        boxShadow: isExpanded ? '0 0 12px rgba(245, 158, 11, 0.25)' : 'none'
+                        boxShadow: isExpanded ? '0 0 12px rgba(185, 95, 60, 0.25)' : 'none'
                       }}
                       title={`Klik untuk melihat urutan silsilah ${group.label}`}
                     >
-                      <div style={{ fontSize: 11, color: isExpanded ? '#fbbf24' : 'var(--text-secondary)', fontWeight: 600 }}>
+                      <div style={{ fontSize: 11, color: isExpanded ? '#a14c30' : 'var(--text-secondary)', fontWeight: 600 }}>
                         {group.label.split(' ')[0]}
                       </div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc', marginTop: 2 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: '#3e3028', marginTop: 2 }}>
                         {group.items.length} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-muted)' }}>Jiwa</span>
                       </div>
                     </div>
@@ -527,8 +528,8 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                     <div
                       key={group.level}
                       style={{
-                        background: 'rgba(30, 41, 59, 0.35)',
-                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        background: 'rgba(240, 228, 213, 0.35)',
+                        border: '1px solid rgba(123, 88, 61, 0.06)',
                         borderRadius: 'var(--radius-sm)',
                         padding: '10px 12px'
                       }}
@@ -543,10 +544,10 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                           userSelect: 'none'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: '#f8fafc' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: '#3e3028' }}>
                           <Baby size={14} style={{ color: 'var(--accent-gold)' }} />
                           <span>{group.label}</span>
-                          <span style={{ fontSize: 11, color: '#fbbf24', fontWeight: 700 }}>
+                          <span style={{ fontSize: 11, color: '#a14c30', fontWeight: 700 }}>
                             ({group.items.length} Orang)
                           </span>
                         </div>
@@ -564,18 +565,18 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                               className="relation-chip"
                               onClick={() => onSelectMember(desc.id)}
                               title={`Lihat profil ${desc.fullName} (${group.level > 1 ? `Anak dari ${parentName}` : `Anak ke-${desc.order || itemIdx + 1}`})`}
-                              style={{ padding: '4px 8px', background: 'rgba(15, 23, 42, 0.8)' }}
+                              style={{ padding: '4px 8px', background: 'rgba(255, 253, 249, 0.8)' }}
                             >
-                              <img src={desc.avatar} alt={desc.fullName} className="relation-chip-avatar" style={{ width: 22, height: 22 }} />
+                              <MemberAvatar src={desc.avatar} name={desc.fullName} className="relation-chip-avatar"  />
                               <div>
                                 <div className="relation-chip-name" style={{ fontSize: 11.5 }}>
                                   {desc.fullName} {desc.nickname ? `("${desc.nickname}")` : ''}
                                 </div>
                                 <div className="relation-chip-role" style={{ fontSize: 9.5 }}>
                                   {group.level > 1 && parentName ? (
-                                    <span style={{ color: '#38bdf8' }}>dr. {parentName} • </span>
+                                    <span style={{ color: '#397c8a' }}>dr. {parentName} • </span>
                                   ) : null}
-                                  <span style={{ color: desc.gender === 'female' ? '#f43f5e' : '#0284c7' }}>
+                                  <span style={{ color: desc.gender === 'female' ? '#b44c62' : '#0284c7' }}>
                                     {desc.gender === 'female' ? '♀' : '♂'}
                                   </span>
                                   {` Anak ke-${desc.order || itemIdx + 1}`}
@@ -606,7 +607,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                       onClick={() => onSelectMember(p.id)}
                       title={`Lihat profil ${p.fullName}`}
                     >
-                      <img src={p.avatar} alt={p.fullName} className="relation-chip-avatar" />
+                      <MemberAvatar src={p.avatar} name={p.fullName} className="relation-chip-avatar"  />
                       <div>
                         <div className="relation-chip-name">{p.fullName}</div>
                         <div className="relation-chip-role">
@@ -632,9 +633,9 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                         className="relation-chip"
                         onClick={() => onSelectMember(sp.id)}
                         title={`Lihat profil ${sp.fullName}`}
-                        style={isDiv ? { borderColor: '#f43f5e' } : { borderColor: '#f59e0b' }}
+                        style={isDiv ? { borderColor: '#b44c62' } : { borderColor: '#b95f3c' }}
                       >
-                        <img src={sp.avatar} alt={sp.fullName} className="relation-chip-avatar" />
+                        <MemberAvatar src={sp.avatar} name={sp.fullName} className="relation-chip-avatar"  />
                         <div>
                           <div className="relation-chip-name">{sp.fullName}</div>
                           <div className="relation-chip-role">
@@ -666,7 +667,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                       onClick={() => onSelectMember(sib.id)}
                       title={`Lihat profil ${sib.fullName}`}
                     >
-                      <img src={sib.avatar} alt={sib.fullName} className="relation-chip-avatar" />
+                      <MemberAvatar src={sib.avatar} name={sib.fullName} className="relation-chip-avatar"  />
                       <div>
                         <div className="relation-chip-name">{sib.fullName}</div>
                         <div className="relation-chip-role">Saudara</div>
@@ -689,7 +690,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                       onClick={() => onSelectMember(ch.id)}
                       title={`Lihat profil ${ch.fullName}`}
                     >
-                      <img src={ch.avatar} alt={ch.fullName} className="relation-chip-avatar" />
+                      <MemberAvatar src={ch.avatar} name={ch.fullName} className="relation-chip-avatar"  />
                       <div>
                         <div className="relation-chip-name">{ch.fullName}</div>
                         <div className="relation-chip-role">
@@ -726,7 +727,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               <button
                 className="btn-nav-glass"
                 onClick={handleDelete}
-                style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                style={{ color: '#b74747', borderColor: 'rgba(239, 68, 68, 0.4)' }}
                 title="Hapus Anggota"
               >
                 <Trash2 size={16} /> Hapus

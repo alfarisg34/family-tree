@@ -1,3 +1,4 @@
+import { MemberAvatar } from './MemberAvatar';
 import React, { useState } from 'react';
 import type { ClusterNode, ZoomTier, RootGenerationType } from '../types/family';
 import { Users, ZoomIn, ChevronRight } from 'lucide-react';
@@ -54,6 +55,11 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
       onMouseLeave={() => setIsHovered(false)}
       role="button"
       tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault(); event.stopPropagation(); onClusterClick(cluster);
+        }
+      }}
       aria-label={`Cluster ${cluster.label}: ${cluster.count} anggota keluarga. Klik untuk memperbesar.`}
     >
       <div
@@ -85,12 +91,9 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
                 transform: `translateX(${(idx - (previewMembers.length - 1) / 2) * 16}px) scale(${1 - idx * 0.12})`
               }}
             >
-              <img
-                src={node.member.avatar}
-                alt={node.member.fullName}
+              <MemberAvatar src={node.member.avatar} name={node.member.fullName}
                 className="cluster-avatar-img"
-                loading="lazy"
-              />
+               />
               {idx === 0 && (
                 <div className="cluster-leader-crown" title="Leluhur Tertua di Kelompok Ini">
                   👑
@@ -132,11 +135,9 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
             <div className="cluster-tooltip-list">
               {cluster.memberNodes.slice(0, 5).map((node) => (
                 <div key={node.id} className="cluster-tooltip-member-item">
-                  <img
-                    src={node.member.avatar}
-                    alt={node.member.fullName}
+                  <MemberAvatar src={node.member.avatar} name={node.member.fullName}
                     className="cluster-tooltip-avatar"
-                  />
+                   />
                   <div className="cluster-tooltip-member-info">
                     <span className="cluster-tooltip-name">{node.member.fullName}</span>
                     <span className="cluster-tooltip-gen">{getGenerationLabel(node.generation, rootGenerationType)}</span>

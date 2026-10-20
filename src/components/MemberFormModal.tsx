@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 import {
   type FamilyMember,
   type FamilyData,
@@ -9,7 +10,7 @@ import {
   type GalleryPhoto,
   formatMemberFullName
 } from '../types/family';
-import { uploadImageToSupabaseStorage } from '../services/supabaseService';
+import { uploadImage } from '../services/databaseService';
 import { optimizeImage } from '../utils/imageOptimizer';
 import { getWhatsAppUrl } from '../utils/dateUtils';
 import {
@@ -79,9 +80,9 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         style={{
           fontSize: 11,
-          background: 'rgba(245, 158, 11, 0.12)',
-          border: '1px solid rgba(245, 158, 11, 0.35)',
-          color: '#fbbf24',
+          background: 'rgba(185, 95, 60, 0.12)',
+          border: '1px solid rgba(185, 95, 60, 0.35)',
+          color: '#a14c30',
           padding: '3px 10px',
           borderRadius: 'var(--radius-full)',
           display: 'inline-flex',
@@ -104,10 +105,10 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
             right: 0,
             width: 290,
             maxHeight: 320,
-            background: '#0f172a',
+            background: '#fffdf9',
             border: '1px solid var(--border-glass-highlight)',
             borderRadius: 'var(--radius-md)',
-            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(245, 158, 11, 0.15)',
+            boxShadow: 'var(--shadow-elevated)',
             zIndex: 100,
             display: 'flex',
             flexDirection: 'column',
@@ -117,7 +118,7 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Search Header */}
-          <div style={{ padding: '8px', borderBottom: '1px solid var(--border-glass)', background: 'rgba(0, 0, 0, 0.3)' }}>
+          <div style={{ padding: '8px', borderBottom: '1px solid var(--border-glass)', background: '#f5ecdf' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Search size={14} style={{ position: 'absolute', left: 8, color: 'var(--text-muted)' }} />
               <input
@@ -130,10 +131,10 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
                   width: '100%',
                   padding: '5px 8px 5px 28px',
                   fontSize: 12,
-                  background: 'rgba(15, 23, 42, 0.8)',
+                  background: 'rgba(255, 253, 249, 0.8)',
                   border: '1px solid var(--border-glass)',
                   borderRadius: 'var(--radius-sm)',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   outline: 'none'
                 }}
               />
@@ -178,12 +179,12 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
                       padding: '6px 8px',
                       borderRadius: 'var(--radius-sm)',
                       cursor: 'pointer',
-                      background: isSelected ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                      background: isSelected ? 'rgba(185, 95, 60, 0.15)' : 'transparent',
                       borderLeft: isSelected ? '3px solid var(--accent-gold)' : '3px solid transparent',
                       transition: 'background 0.15s ease'
                     }}
                     onMouseEnter={(e) => {
-                      if (!isSelected) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      if (!isSelected) e.currentTarget.style.background = 'rgba(123, 88, 61, 0.05)';
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected) e.currentTarget.style.background = 'transparent';
@@ -196,7 +197,7 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
                         style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-glass)' }}
                       />
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#3e3028', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {formatMemberFullName(m)}
                         </div>
                         <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
@@ -221,7 +222,7 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
           </div>
 
           {/* Footer */}
-          <div style={{ padding: '6px 8px', borderTop: '1px solid var(--border-glass)', background: 'rgba(0, 0, 0, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '6px 8px', borderTop: '1px solid var(--border-glass)', background: '#f5ecdf', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
               {selectedMemberIds.length} anggota ditandai
             </span>
@@ -230,9 +231,9 @@ const SearchableMemberTagPicker: React.FC<SearchableMemberTagPickerProps> = ({
               onClick={() => setIsOpen(false)}
               style={{
                 fontSize: 11,
-                background: 'rgba(245, 158, 11, 0.2)',
-                border: '1px solid rgba(245, 158, 11, 0.4)',
-                color: '#fbbf24',
+                background: 'rgba(185, 95, 60, 0.2)',
+                border: '1px solid rgba(185, 95, 60, 0.4)',
+                color: '#a14c30',
                 padding: '2px 8px',
                 borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
@@ -266,6 +267,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
   onClose
 }) => {
   const isEditing = Boolean(initialMember?.id);
+  const dialogRef = useAccessibleDialog(onClose);
   const sourceMember = sourceNodeIdForRelation ? familyData.members[sourceNodeIdForRelation] : undefined;
   const allOtherMembers = Object.values(familyData.members).filter(
     (m) => m.id !== initialMember?.id
@@ -472,7 +474,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         setIsOptimizing(true);
         setOptimizationStatus('Mengunggah foto profil...');
 
-        const finalUrl = await uploadImageToSupabaseStorage(
+        const finalUrl = await uploadImage(
           croppedDataUrl,
           'avatars',
           formData.id || 'avatar'
@@ -483,9 +485,9 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           avatar: finalUrl || croppedDataUrl
         }));
 
-        const isCloud = finalUrl && finalUrl.startsWith('http') && !finalUrl.startsWith('data:');
+        const isCloud = finalUrl && (finalUrl.startsWith('http') || finalUrl.startsWith('/api/'));
         setOptimizationStatus(
-          `✓ Foto profil diperbarui ${isCloud ? '• Tersimpan di Supabase Storage' : ''}`
+          `✓ Foto profil diperbarui ${isCloud ? '• Tersimpan di database Neon' : ''}`
         );
       } catch (err) {
         console.error(err);
@@ -499,7 +501,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         setIsOptimizing(true);
         setOptimizationStatus('Menyimpan hasil penyesuaian foto galeri...');
 
-        const finalUrl = await uploadImageToSupabaseStorage(
+        const finalUrl = await uploadImage(
           croppedDataUrl,
           'gallery',
           photoId
@@ -535,7 +537,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         const file = files[i];
         const res = await optimizeImage(file, 1000, 1000, 0.82);
         const photoId = 'photo-' + Date.now() + '-' + i;
-        const uploadedUrl = await uploadImageToSupabaseStorage(res.dataUrl, 'gallery', photoId);
+        const uploadedUrl = await uploadImage(res.dataUrl, 'gallery', photoId);
 
         newPhotos.push({
           id: photoId,
@@ -691,7 +693,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 720 }}>
+      <div className="modal-content-card" ref={dialogRef} role="dialog" aria-modal="true" aria-label={isEditing ? 'Edit anggota keluarga' : 'Tambah anggota keluarga'} tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 720 }}>
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -714,7 +716,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Foto Profil & Optimisasi Box */}
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center', background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center', background: 'rgba(240, 228, 213, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
             <div style={{ position: 'relative', width: 84, height: 84, flexShrink: 0 }}>
               <img
                 src={formData.avatar}
@@ -757,7 +759,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     type="button"
                     className="btn-nav-glass"
                     onClick={handleOpenCropForExistingAvatar}
-                    style={{ color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.4)' }}
+                    style={{ color: '#a14c30', borderColor: 'rgba(185, 95, 60, 0.4)' }}
                     title="Sesuaikan posisi, zoom & rotasi foto profil"
                   >
                     <Scissors size={14} /> Crop & Sesuaikan
@@ -775,7 +777,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
               </div>
 
               {optimizationStatus && (
-                <div style={{ fontSize: 11, color: '#10b981', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 11, color: '#42816a', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <CheckCircle2 size={13} /> {optimizationStatus}
                 </div>
               )}
@@ -821,7 +823,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
           {/* Live Preview Format Nama Resmi */}
           {formData.fullName && (
-            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-glass)', fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: 'rgba(255, 253, 249, 0.65)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-glass)', fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Format Tampilan Nama Resmi:</span>
               <span style={{ color: 'var(--text-gold)', fontWeight: 700, fontSize: 13.5 }}>
                 {formatMemberFullName(formData)}
@@ -869,7 +871,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           </div>
 
           {/* 2. Hubungan Pasangan (Suami / Istri / Mantan) */}
-          <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+          <div style={{ background: 'rgba(240, 228, 213, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-gold)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Heart size={15} /> Pasangan (Suami / Istri / Mantan)
@@ -899,7 +901,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 8,
-                        background: 'rgba(15, 23, 42, 0.65)',
+                        background: 'rgba(255, 253, 249, 0.65)',
                         padding: 12,
                         borderRadius: 'var(--radius-sm)',
                         border: '1px solid var(--border-glass)'
@@ -944,7 +946,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                           style={{
                             background: 'rgba(239, 68, 68, 0.18)',
                             border: '1px solid rgba(239, 68, 68, 0.4)',
-                            color: '#f87171',
+                            color: '#b74747',
                             borderRadius: 'var(--radius-sm)',
                             padding: '7px 9px',
                             cursor: 'pointer',
@@ -981,7 +983,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           </div>
 
           {/* 3. Status Kehidupan (Hidup / Wafat) */}
-          <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+          <div style={{ background: 'rgba(240, 228, 213, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <label className="form-label" style={{ margin: 0, color: 'var(--text-gold)', fontWeight: 700 }}>
                 Status Keberadaan
@@ -994,7 +996,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, isDeceased: e.target.checked })}
                   style={{ width: 16, height: 16, accentColor: 'var(--accent-gold)' }}
                 />
-                <span style={{ color: formData.isDeceased ? '#cbd5e1' : '#10b981', fontWeight: 600 }}>
+                <span style={{ color: formData.isDeceased ? '#756357' : '#42816a', fontWeight: 600 }}>
                   {formData.isDeceased ? '🎗️ Sudah Wafat (Almarhum / Almarhumah)' : '🌿 Masih Hidup'}
                 </span>
               </label>
@@ -1027,7 +1029,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           </div>
 
           {/* 4. Garis Silsilah & Hubungan Orang Tua */}
-          <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+          <div style={{ background: 'rgba(240, 228, 213, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-gold)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Users size={15} /> Hubungan Orang Tua (Ayah & Ibu)
             </div>
@@ -1123,7 +1125,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
             {/* Smart Siblings Placement Preview when adding a child */}
             {!isEditing && relationDirection === 'child' && existingSiblings.length > 0 && (
-              <div style={{ marginTop: 14, background: 'rgba(15, 23, 42, 0.65)', padding: 12, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-glass)' }}>
+              <div style={{ marginTop: 14, background: 'rgba(255, 253, 249, 0.65)', padding: 12, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-glass)' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-gold)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <ListOrdered size={14} /> Preview Urutan Saudara Kandung dari {sourceMember?.fullName}:
                 </div>
@@ -1166,8 +1168,8 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                           gap: 8,
                           padding: '3px 6px',
                           borderRadius: 4,
-                          background: item.isNew ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                          color: item.isNew ? '#fbbf24' : '#94a3b8',
+                          background: item.isNew ? 'rgba(185, 95, 60, 0.15)' : 'transparent',
+                          color: item.isNew ? '#a14c30' : '#796b60',
                           fontWeight: item.isNew ? 700 : 500
                         }}
                       >
@@ -1183,12 +1185,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
           {/* 5. Daftar & Urutan Kelahiran Anak (Ketika Edit Profil Orang Tua yang Sudah Punya Anak) */}
           {childrenList.length > 0 && (
-            <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: 18, borderRadius: 'var(--radius-md)', border: '1.5px solid rgba(245, 158, 11, 0.4)' }}>
+            <div style={{ background: 'rgba(240, 228, 213, 0.5)', padding: 18, borderRadius: 'var(--radius-md)', border: '1.5px solid rgba(185, 95, 60, 0.4)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-gold)', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <Baby size={16} /> Urutan Kelahiran & Mapping Pasangan Anak ({childrenList.length} Anak)
                 </div>
-                <span style={{ fontSize: 11, color: '#38bdf8', fontWeight: 600 }}>
+                <span style={{ fontSize: 11, color: '#397c8a', fontWeight: 600 }}>
                   ✨ Drag & Drop untuk Mengatur Urutan
                 </span>
               </div>
@@ -1211,7 +1213,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
-                        background: isDraggingThis ? 'rgba(245, 158, 11, 0.2)' : 'rgba(15, 23, 42, 0.75)',
+                        background: isDraggingThis ? 'rgba(185, 95, 60, 0.2)' : 'rgba(255, 253, 249, 0.75)',
                         border: isDraggingThis ? '2px dashed var(--accent-gold)' : '1px solid var(--border-glass)',
                         padding: '8px 12px',
                         borderRadius: 'var(--radius-sm)',
@@ -1241,7 +1243,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       {/* Info & Badge */}
                       <div style={{ flex: 1, overflow: 'hidden' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#3e3028', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                             {child.fullName}
                           </span>
                           {child.nickname && (
@@ -1251,11 +1253,11 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                           )}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
-                          <span style={{ color: child.gender === 'female' ? '#f43f5e' : '#0284c7', fontWeight: 600 }}>
+                          <span style={{ color: child.gender === 'female' ? '#b44c62' : '#0284c7', fontWeight: 600 }}>
                             {child.gender === 'female' ? '♀ Perempuan' : '♂ Laki-laki'}
                           </span>
                           <span>•</span>
-                          <span style={{ color: '#fbbf24', fontWeight: 700 }}>
+                          <span style={{ color: '#a14c30', fontWeight: 700 }}>
                             {getChildOrderLabel(index, childrenList.length)}
                           </span>
                         </div>
@@ -1291,7 +1293,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                                 setChildrenList(updated);
                               }}
                               className="form-select"
-                              style={{ fontSize: 11.5, padding: '2px 8px', height: 26, background: 'rgba(15, 23, 42, 0.9)' }}
+                              style={{ fontSize: 11.5, padding: '2px 8px', height: 26, background: 'rgba(255, 253, 249, 0.9)' }}
                             >
                               <option value="">-- Hanya {formData.nickname || (formData.fullName ? formData.fullName.split(' ')[0] : 'Orang Tua Ini')} --</option>
                               {formData.spouses.map((sp) => {
@@ -1314,9 +1316,9 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                           onClick={() => handleMoveChild(index, 'up')}
                           disabled={index === 0}
                           style={{
-                            background: 'rgba(30, 41, 59, 0.8)',
+                            background: 'rgba(240, 228, 213, 0.8)',
                             border: '1px solid var(--border-glass)',
-                            color: index === 0 ? '#475569' : '#e2e8f0',
+                            color: index === 0 ? '#806c5d' : '#58473d',
                             borderRadius: '4px',
                             padding: '4px 6px',
                             cursor: index === 0 ? 'not-allowed' : 'pointer',
@@ -1332,9 +1334,9 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                           onClick={() => handleMoveChild(index, 'down')}
                           disabled={index === childrenList.length - 1}
                           style={{
-                            background: 'rgba(30, 41, 59, 0.8)',
+                            background: 'rgba(240, 228, 213, 0.8)',
                             border: '1px solid var(--border-glass)',
-                            color: index === childrenList.length - 1 ? '#475569' : '#e2e8f0',
+                            color: index === childrenList.length - 1 ? '#806c5d' : '#58473d',
                             borderRadius: '4px',
                             padding: '4px 6px',
                             cursor: index === childrenList.length - 1 ? 'not-allowed' : 'pointer',
@@ -1444,7 +1446,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           </div>
 
           {/* 7. Galeri Foto Karosel & Kenangan */}
-          <div style={{ background: 'rgba(30, 41, 59, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
+          <div style={{ background: 'rgba(240, 228, 213, 0.4)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-glass)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div>
                 <label className="form-label" style={{ margin: 0, color: 'var(--text-gold)', fontWeight: 700 }}>
@@ -1486,7 +1488,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       display: 'flex',
                       gap: 12,
                       alignItems: 'center',
-                      background: 'rgba(15, 23, 42, 0.65)',
+                      background: 'rgba(255, 253, 249, 0.65)',
                       padding: 10,
                       borderRadius: 'var(--radius-sm)',
                       border: '1px solid var(--border-glass)'
@@ -1502,9 +1504,9 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                         onClick={() => handleOpenCropForGalleryPhoto(p)}
                         style={{
                           fontSize: 10.5,
-                          background: 'rgba(245, 158, 11, 0.15)',
-                          border: '1px solid rgba(245, 158, 11, 0.35)',
-                          color: '#fbbf24',
+                          background: 'rgba(185, 95, 60, 0.15)',
+                          border: '1px solid rgba(185, 95, 60, 0.35)',
+                          color: '#a14c30',
                           padding: '2px 8px',
                           borderRadius: 'var(--radius-sm)',
                           cursor: 'pointer',
@@ -1576,9 +1578,9 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                                   key={tagId}
                                   style={{
                                     fontSize: 10.5,
-                                    background: 'rgba(245, 158, 11, 0.15)',
-                                    border: '1px solid rgba(245, 158, 11, 0.35)',
-                                    color: '#fbbf24',
+                                    background: 'rgba(185, 95, 60, 0.15)',
+                                    border: '1px solid rgba(185, 95, 60, 0.35)',
+                                    color: '#a14c30',
                                     padding: '2px 7px',
                                     borderRadius: 'var(--radius-full)',
                                     display: 'inline-flex',
@@ -1593,7 +1595,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                                     style={{
                                       background: 'transparent',
                                       border: 'none',
-                                      color: '#f87171',
+                                      color: '#b74747',
                                       cursor: 'pointer',
                                       padding: 0,
                                       fontSize: 11,
@@ -1623,7 +1625,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       style={{
                         background: 'rgba(239, 68, 68, 0.15)',
                         border: '1px solid rgba(239, 68, 68, 0.35)',
-                        color: '#f87171',
+                        color: '#b74747',
                         borderRadius: 'var(--radius-sm)',
                         padding: '8px 10px',
                         cursor: 'pointer',

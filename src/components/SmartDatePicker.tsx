@@ -337,8 +337,8 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: 'var(--radius-md)',
-            background: isPopoverOpen ? 'var(--accent-gold)' : 'rgba(30, 41, 59, 0.7)',
-            color: isPopoverOpen ? '#0f172a' : 'var(--text-gold)',
+            background: isPopoverOpen ? 'var(--accent-gold)' : 'rgba(240, 228, 213, 0.7)',
+            color: isPopoverOpen ? '#fffdf9' : 'var(--text-gold)',
             borderColor: isPopoverOpen ? 'var(--accent-gold)' : 'var(--border-glass)',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
@@ -364,14 +364,14 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
       >
         {ageDisplay ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ color: '#fbbf24', fontWeight: 600 }}>
+            <span style={{ color: '#a14c30', fontWeight: 600 }}>
               ✨ {ageDisplay.formatted}
             </span>
             {ageDisplay.ageText && (
               <span
                 style={{
-                  background: isDeceased ? 'rgba(148, 163, 184, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                  color: isDeceased ? '#cbd5e1' : '#34d399',
+                  background: isDeceased ? 'rgba(121, 107, 96, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                  color: isDeceased ? '#756357' : '#5c9179',
                   padding: '1px 6px',
                   borderRadius: '4px',
                   fontWeight: 600,
@@ -395,7 +395,7 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: '#796b60',
               cursor: 'pointer',
               fontSize: '10.5px',
               display: 'inline-flex',
@@ -425,7 +425,7 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
             backdropFilter: 'blur(20px)',
             border: '1.5px solid var(--accent-gold)',
             borderRadius: 'var(--radius-md)',
-            boxShadow: '0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.2)',
+            boxShadow: 'var(--shadow-elevated)',
             padding: 14,
             display: 'flex',
             flexDirection: 'column',
@@ -442,9 +442,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
               type="button"
               onClick={() => setIsPopoverOpen(false)}
               style={{
-                background: 'rgba(255, 255, 255, 0.08)',
+                background: 'rgba(123, 88, 61, 0.08)',
                 border: 'none',
-                color: '#cbd5e1',
+                color: '#756357',
                 borderRadius: '50%',
                 width: 22,
                 height: 22,
@@ -469,7 +469,7 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
               style={{
                 padding: '6px 10px',
                 fontSize: '12px',
-                background: 'rgba(15, 23, 42, 0.85)',
+                background: 'rgba(255, 253, 249, 0.85)',
               }}
               autoFocus
             />
@@ -505,8 +505,8 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                         fontWeight: 700,
                         borderRadius: 'var(--radius-sm)',
                         border: isSelected ? '1.5px solid var(--accent-gold)' : '1px solid var(--border-glass)',
-                        background: isSelected ? 'rgba(245, 158, 11, 0.25)' : 'rgba(30, 41, 59, 0.6)',
-                        color: isSelected ? '#fbbf24' : '#f8fafc',
+                        background: isSelected ? 'rgba(185, 95, 60, 0.25)' : 'rgba(240, 228, 213, 0.6)',
+                        color: isSelected ? '#a14c30' : '#3e3028',
                         cursor: 'pointer',
                       }}
                     >
@@ -544,9 +544,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                           fontSize: '11px',
                           fontWeight: isActive ? 700 : 500,
                           borderRadius: 'var(--radius-sm)',
-                          border: isActive ? '1px solid var(--accent-gold)' : '1px solid rgba(255, 255, 255, 0.08)',
-                          background: isActive ? 'var(--accent-gold)' : 'rgba(30, 41, 59, 0.5)',
-                          color: isActive ? '#0f172a' : '#cbd5e1',
+                          border: isActive ? '1px solid var(--accent-gold)' : '1px solid rgba(123, 88, 61, 0.08)',
+                          background: isActive ? 'var(--accent-gold)' : 'rgba(240, 228, 213, 0.5)',
+                          color: isActive ? '#fffdf9' : '#756357',
                           cursor: 'pointer',
                           whiteSpace: 'nowrap',
                           transition: 'all 0.15s ease',
@@ -563,7 +563,7 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
               {/* Decade Navigation & 10-Year Matrix Grid */}
               <div
                 style={{
-                  background: 'rgba(15, 23, 42, 0.6)',
+                  background: 'rgba(255, 253, 249, 0.6)',
                   padding: 10,
                   borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--border-glass)',
@@ -581,9 +581,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                     type="button"
                     onClick={() => setActiveDecadeStart((prev) => Math.max(1800, prev - 10))}
                     style={{
-                      background: 'rgba(30, 41, 59, 0.8)',
+                      background: 'rgba(240, 228, 213, 0.8)',
                       border: '1px solid var(--border-glass)',
-                      color: '#cbd5e1',
+                      color: '#756357',
                       borderRadius: 4,
                       padding: '3px 8px',
                       fontSize: '11px',
@@ -605,9 +605,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                     onClick={() => setActiveDecadeStart((prev) => Math.min(CURRENT_DECADE_START, prev + 10))}
                     disabled={activeDecadeStart >= CURRENT_DECADE_START}
                     style={{
-                      background: 'rgba(30, 41, 59, 0.8)',
+                      background: 'rgba(240, 228, 213, 0.8)',
                       border: '1px solid var(--border-glass)',
-                      color: activeDecadeStart >= CURRENT_DECADE_START ? '#475569' : '#cbd5e1',
+                      color: activeDecadeStart >= CURRENT_DECADE_START ? '#806c5d' : '#756357',
                       borderRadius: 4,
                       padding: '3px 8px',
                       fontSize: '11px',
@@ -645,17 +645,17 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                           border: isSelected
                             ? '1.5px solid var(--accent-gold)'
                             : isCur
-                            ? '1px dashed #38bdf8'
-                            : '1px solid rgba(255, 255, 255, 0.1)',
+                            ? '1px dashed #397c8a'
+                            : '1px solid rgba(123, 88, 61, 0.1)',
                           background: isSelected
-                            ? 'rgba(245, 158, 11, 0.3)'
+                            ? 'rgba(185, 95, 60, 0.3)'
                             : isCur
-                            ? 'rgba(56, 189, 248, 0.1)'
-                            : 'rgba(30, 41, 59, 0.7)',
-                          color: isSelected ? '#fbbf24' : isCur ? '#38bdf8' : '#f1f5f9',
+                            ? 'rgba(57, 124, 138, 0.1)'
+                            : 'rgba(240, 228, 213, 0.7)',
+                          color: isSelected ? '#a14c30' : isCur ? '#397c8a' : '#4f3c31',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
-                          boxShadow: isSelected ? '0 0 10px rgba(245, 158, 11, 0.3)' : 'none',
+                          boxShadow: isSelected ? '0 0 10px rgba(185, 95, 60, 0.3)' : 'none',
                         }}
                       >
                         {yr}
@@ -674,7 +674,7 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                   gap: 6,
                   flexWrap: 'wrap',
                   paddingTop: 4,
-                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderTop: '1px solid rgba(123, 88, 61, 0.08)',
                 }}
               >
                 <div style={{ display: 'flex', gap: 5 }}>
@@ -683,9 +683,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                     onClick={() => handleSelectYearFromPopover(CURRENT_YEAR)}
                     style={{
                       fontSize: '10.5px',
-                      background: 'rgba(56, 189, 248, 0.12)',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
-                      color: '#38bdf8',
+                      background: 'rgba(57, 124, 138, 0.12)',
+                      border: '1px solid rgba(57, 124, 138, 0.3)',
+                      color: '#397c8a',
                       padding: '3px 8px',
                       borderRadius: 4,
                       cursor: 'pointer',
@@ -699,9 +699,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                     onClick={() => handleSelectYearFromPopover(1970)}
                     style={{
                       fontSize: '10.5px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      color: '#cbd5e1',
+                      background: 'rgba(123, 88, 61, 0.06)',
+                      border: '1px solid rgba(123, 88, 61, 0.12)',
+                      color: '#756357',
                       padding: '3px 8px',
                       borderRadius: 4,
                       cursor: 'pointer',
@@ -714,9 +714,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                     onClick={() => handleSelectYearFromPopover(1950)}
                     style={{
                       fontSize: '10.5px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      color: '#cbd5e1',
+                      background: 'rgba(123, 88, 61, 0.06)',
+                      border: '1px solid rgba(123, 88, 61, 0.12)',
+                      color: '#756357',
                       padding: '3px 8px',
                       borderRadius: 4,
                       cursor: 'pointer',
@@ -729,9 +729,9 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                     onClick={() => handleSelectYearFromPopover(1930)}
                     style={{
                       fontSize: '10.5px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      color: '#cbd5e1',
+                      background: 'rgba(123, 88, 61, 0.06)',
+                      border: '1px solid rgba(123, 88, 61, 0.12)',
+                      color: '#756357',
                       padding: '3px 8px',
                       borderRadius: 4,
                       cursor: 'pointer',
@@ -748,7 +748,7 @@ export const SmartDatePicker: React.FC<SmartDatePickerProps> = ({
                     fontSize: '11px',
                     background: 'var(--accent-gold)',
                     border: 'none',
-                    color: '#0f172a',
+                    color: '#fffdf9',
                     padding: '3px 10px',
                     borderRadius: 4,
                     cursor: 'pointer',

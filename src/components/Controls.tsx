@@ -22,11 +22,11 @@ export const Controls: React.FC<ControlsProps> = ({
   const getTierBadge = () => {
     switch (lodLevel) {
       case 'macro':
-        return { label: 'Cluster Makro', icon: '🌐', color: 'var(--text-gold)' };
+        return { label: 'Keluarga besar', icon: '🌐', color: 'var(--text-gold)' };
       case 'medium':
-        return { label: 'Cabang Keluarga', icon: '🌿', color: '#38bdf8' };
+        return { label: 'Cabang Keluarga', icon: '🌿', color: '#397c8a' };
       case 'micro':
-        return { label: 'Detail Lengkap', icon: '🔍', color: '#2dd4bf' };
+        return { label: 'Detail Lengkap', icon: '🔍', color: '#357e68' };
     }
   };
 
@@ -45,7 +45,7 @@ export const Controls: React.FC<ControlsProps> = ({
           className="control-icon-btn"
           onClick={onZoomIn}
           title="Perbesar Peta (Zoom In)"
-          aria-label="Zoom In"
+          aria-label="Perbesar peta"
         >
           <Plus size={18} />
         </button>
@@ -58,7 +58,7 @@ export const Controls: React.FC<ControlsProps> = ({
           className="control-icon-btn"
           onClick={onZoomOut}
           title="Perkecil Peta (Zoom Out)"
-          aria-label="Zoom Out"
+          aria-label="Perkecil peta"
         >
           <Minus size={18} />
         </button>
@@ -69,7 +69,7 @@ export const Controls: React.FC<ControlsProps> = ({
           className="control-icon-btn"
           onClick={onFit}
           title="Sesuaikan dengan Layar (Fit View)"
-          aria-label="Fit View"
+          aria-label="Lihat seluruh keluarga"
         >
           <Maximize size={16} />
         </button>
@@ -78,7 +78,7 @@ export const Controls: React.FC<ControlsProps> = ({
           className="control-icon-btn"
           onClick={onReset}
           title="Posisikan ke Tengah (Reset)"
-          aria-label="Reset View"
+          aria-label="Kembali ke tengah keluarga"
         >
           <RotateCcw size={16} />
         </button>

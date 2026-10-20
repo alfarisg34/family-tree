@@ -2,6 +2,7 @@ import React from 'react';
 import type { LayoutNode, LODLevel, RootGenerationType } from '../types/family';
 import { getMemberAgeBadgeText, getGenerationLabel } from '../utils/dateUtils';
 import { Plus, UserPlus, Heart } from 'lucide-react';
+import { MemberAvatar } from './MemberAvatar';
 
 interface NodeCardProps {
   node: LayoutNode;
@@ -60,6 +61,11 @@ export const NodeCard: React.FC<NodeCardProps> = ({
         zIndex: isSelected ? 40 : isHighlighted ? 35 : 10
       }}
       onClick={handleClick}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault(); event.stopPropagation(); onClick(node);
+        }
+      }}
       role="button"
       tabIndex={0}
       aria-label={`Anggota keluarga: ${member.fullName}, Generasi ${member.generation}`}
@@ -85,20 +91,19 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           className={`avatar-frame ${isDeceased ? 'deceased' : ''} ${isAdopted ? 'adopted' : ''}`}
           style={{
             border: isHighlighted
-              ? '3px solid #fbbf24'
+              ? '3px solid #a14c30'
               : isSelected
-              ? '3px solid #38bdf8'
+              ? '3px solid #397c8a'
               : undefined,
             boxShadow: isHighlighted
-              ? '0 0 25px rgba(245, 158, 11, 0.7)'
+              ? '0 0 25px rgba(185, 95, 60, 0.7)'
               : undefined
           }}
         >
-          <img
+          <MemberAvatar
             src={member.avatar}
-            alt={member.fullName}
+            name={member.fullName}
             className={`avatar-image-circle ${isDeceased ? 'is-deceased' : ''}`}
-            loading="lazy"
           />
 
           {isDeceased && (
@@ -130,7 +135,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             borderColor: isHighlighted
               ? 'var(--accent-gold)'
               : isSelected
-              ? '#38bdf8'
+              ? '#397c8a'
               : undefined
           }}
         >
@@ -149,7 +154,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           {/* Micro Tier: Rich progressive disclosure details */}
           {lodLevel === 'micro' && (
             <>
-              <div className="node-sub-info" style={{ fontWeight: 600, color: '#e2e8f0' }}>
+              <div className="node-sub-info" style={{ fontWeight: 600, color: '#58473d' }}>
                 {member.fullName}
               </div>
               {ageBadgeText && (

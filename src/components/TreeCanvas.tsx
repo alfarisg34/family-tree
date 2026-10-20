@@ -39,6 +39,9 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
   // Compute marker clustering & viewport distance culling (spatial virtualization)
   const { visibleClusters, visibleNodes, visibleEdges, zoomTier } = useMemo(() => {
+    if (Object.keys(nodes).length <= 12) {
+      return { visibleClusters: [], visibleNodes: Object.values(nodes), visibleEdges: edges, zoomTier: 'medium' as const };
+    }
     return computeClusteredTree({
       nodes,
       edges,
@@ -115,15 +118,15 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 >
                   <circle
                     r="12"
-                    fill="#0f172a"
-                    stroke={isDivorced ? '#f43f5e' : '#f59e0b'}
+                    fill="#fffdf9"
+                    stroke={isDivorced ? '#b44c62' : '#b95f3c'}
                     strokeWidth="1.5"
                   />
                   <text
                     textAnchor="middle"
                     dominantBaseline="central"
                     fontSize="11"
-                    fill={isDivorced ? '#f43f5e' : '#fbbf24'}
+                    fill={isDivorced ? '#b44c62' : '#a14c30'}
                   >
                     {isDivorced ? '💔' : '💍'}
                   </text>
@@ -138,14 +141,14 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                   <circle
                     r="10"
                     fill="#042f2e"
-                    stroke="#2dd4bf"
+                    stroke="#357e68"
                     strokeWidth="1.5"
                   />
                   <text
                     textAnchor="middle"
                     dominantBaseline="central"
                     fontSize="9"
-                    fill="#2dd4bf"
+                    fill="#357e68"
                   >
                     🌱
                   </text>
@@ -163,7 +166,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
             y1={lvl.y}
             x2={lvl.maxX + 80}
             y2={lvl.y}
-            stroke="rgba(245, 158, 11, 0.12)"
+            stroke="rgba(185, 95, 60, 0.12)"
             strokeDasharray="4,6"
             strokeWidth={1.5}
             className="tree-generation-line"
@@ -182,7 +185,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
           }}
         >
           <div className="generation-level-pill">
-            <span style={{ color: '#f8fafc', fontWeight: 700 }}>{lvl.name}</span>
+            <span style={{ color: '#3e3028', fontWeight: 700 }}>{lvl.name}</span>
             <span className="count">{lvl.count} Anggota</span>
           </div>
         </div>
@@ -206,7 +209,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         <NodeCard
           key={node.id}
           node={node}
-          lodLevel={lodLevel}
+          lodLevel={Object.keys(nodes).length <= 12 && lodLevel === 'macro' ? 'medium' : lodLevel}
           rootGenerationType={rootGenerationType}
           viewportScale={viewport.scale}
           isMobile={isMobile}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ViewportState, LODLevel, ZoomTier } from '../types/family';
 import { getZoomTier } from '../utils/clusterEngine';
+import { fitTreeViewport } from '../utils/viewport';
 
 interface UsePanZoomOptions {
   minScale?: number;
@@ -13,7 +14,7 @@ interface UsePanZoomOptions {
 
 export function usePanZoom(options: UsePanZoomOptions = {}) {
   const {
-    minScale = 0.2,
+    minScale = 0.08,
     maxScale = 2.5,
     initialScale = 0.85,
     initialX = 0,
@@ -54,14 +55,17 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     };
 
     handleResize();
+    const observer = new ResizeObserver(handleResize);
+    if (containerRef.current) observer.observe(containerRef.current);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => { observer.disconnect(); window.removeEventListener('resize', handleResize); };
   }, []);
 
   // Drag tracking
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const viewportStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const isPointerDownRef = useRef(false);
+  const dragMovedRef = useRef(false);
 
   // Compute Zoom Tier / LOD Level
   const lodLevel: LODLevel = getZoomTier(viewport.scale);
@@ -112,11 +116,11 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     }
     const rect = containerRef.current.getBoundingClientRect();
     setViewport({
-      x: rect.width / 2 - 600 * 0.85,
-      y: rect.height / 2 - 350 * 0.85,
+      x: rect.width / 2 - (bounds ? (bounds.minX + bounds.maxX) / 2 : 0) * 0.85,
+      y: rect.height / 2 - (bounds ? (bounds.minY + bounds.maxY) / 2 : 0) * 0.85,
       scale: 0.85
     });
-  }, []);
+  }, [bounds]);
 
   // Fit all tree bounds into viewport
   const fitView = useCallback((treeBounds?: { minX: number; maxX: number; minY: number; maxY: number }) => {
@@ -124,22 +128,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     if (!containerRef.current || !b) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const treeW = Math.max(400, b.maxX - b.minX);
-    const treeH = Math.max(400, b.maxY - b.minY);
-
-    const padding = window.innerWidth < 768 ? 40 : 100;
-    const scaleX = (rect.width - padding * 2) / treeW;
-    const scaleY = (rect.height - padding * 2) / treeH;
-    const fitScale = Math.max(minScale, Math.min(1.2, Math.min(scaleX, scaleY)));
-
-    const centerX = (b.minX + b.maxX) / 2;
-    const centerY = (b.minY + b.maxY) / 2;
-
-    setViewport({
-      x: rect.width / 2 - centerX * fitScale,
-      y: rect.height / 2 - centerY * fitScale,
-      scale: fitScale
-    });
+    setViewport(fitTreeViewport(b, rect, minScale));
   }, [bounds, minScale]);
 
   // Smooth animation fly to specific node
@@ -177,7 +166,8 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+      const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 300 : 1);
+      const zoomFactor = Math.exp(-Math.max(-120, Math.min(120, delta)) * .002);
       zoomAt(viewport.scale * zoomFactor, e.clientX, e.clientY);
     };
 
@@ -209,6 +199,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
       }
 
       if (e.touches.length === 2) {
+        dragMovedRef.current = true;
         e.preventDefault();
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
@@ -224,11 +215,11 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
         };
         setIsDragging(true);
       } else if (e.touches.length === 1) {
+        dragMovedRef.current = false;
         const touch = e.touches[0];
         isPointerDownRef.current = true;
         dragStartRef.current = { x: touch.clientX, y: touch.clientY };
         viewportStartRef.current = { x: viewport.x, y: viewport.y };
-        setIsDragging(true);
       }
     };
 
@@ -265,10 +256,13 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
           scale: targetScale
         });
       } else if (e.touches.length === 1 && isPointerDownRef.current) {
-        e.preventDefault();
         const touch = e.touches[0];
         const deltaX = touch.clientX - dragStartRef.current.x;
         const deltaY = touch.clientY - dragStartRef.current.y;
+        if (!dragMovedRef.current && Math.hypot(deltaX, deltaY) < 5) return;
+        e.preventDefault();
+        dragMovedRef.current = true;
+        setIsDragging(true);
 
         setViewport((prev) => ({
           ...prev,
@@ -316,9 +310,9 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     }
 
     isPointerDownRef.current = true;
+    dragMovedRef.current = false;
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     viewportStartRef.current = { x: viewport.x, y: viewport.y };
-    setIsDragging(true);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -327,6 +321,10 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
     const deltaX = e.clientX - dragStartRef.current.x;
     const deltaY = e.clientY - dragStartRef.current.y;
+    if (!dragMovedRef.current && Math.hypot(deltaX, deltaY) < 5) return;
+    dragMovedRef.current = true;
+    setIsDragging(true);
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.setPointerCapture(e.pointerId);
 
     setViewport((prev) => ({
       ...prev,
@@ -337,6 +335,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (e.pointerType === 'touch') return;
+    if (e.type === 'pointerleave' && e.currentTarget.hasPointerCapture(e.pointerId)) return;
     isPointerDownRef.current = false;
     setIsDragging(false);
   };
@@ -361,6 +360,10 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
       onPointerDown: handlePointerDown,
       onPointerMove: handlePointerMove,
       onPointerUp: handlePointerUp,
+      onPointerCancel: handlePointerUp,
+      onClickCapture: (event: React.MouseEvent) => {
+        if (dragMovedRef.current && event.detail > 0) { event.preventDefault(); event.stopPropagation(); }
+      },
       onPointerLeave: handlePointerUp
     }
   };

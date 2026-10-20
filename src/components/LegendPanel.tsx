@@ -15,8 +15,9 @@ export const LegendPanel: React.FC = () => {
         if (!isOpen) setIsOpen(true);
       }}
     >
-      <div
+      <button
         className="map-legend-title"
+        aria-expanded={isOpen}
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
@@ -29,7 +30,7 @@ export const LegendPanel: React.FC = () => {
           <span className="legend-title-short">Panduan</span>
         </div>
         {isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-      </div>
+      </button>
 
       {isOpen && (
         <div className="legend-items-list" style={{ marginTop: 6 }}>
@@ -40,7 +41,7 @@ export const LegendPanel: React.FC = () => {
 
           <div className="legend-item">
             <div className="legend-line-sample divorced" />
-            <span style={{ color: '#f87171' }}>Bercerai / Berpisah (Mantan)</span>
+            <span style={{ color: '#b74747' }}>Bercerai / Berpisah (Mantan)</span>
           </div>
 
           <div className="legend-item">
@@ -50,7 +51,7 @@ export const LegendPanel: React.FC = () => {
 
           <div className="legend-item">
             <div className="legend-line-sample child-adopted" />
-            <span style={{ color: '#2dd4bf' }}>🌱 Anak Angkat / Asuh</span>
+            <span style={{ color: '#357e68' }}>🌱 Anak Angkat / Asuh</span>
           </div>
 
           <div style={{ height: 1, background: 'var(--border-glass)', margin: '4px 0' }} />
@@ -62,7 +63,7 @@ export const LegendPanel: React.FC = () => {
 
           <div className="legend-item">
             <div className="legend-circle-sample deceased" />
-            <span style={{ color: '#cbd5e1' }}>🎗️ Foto Sepia: Sudah Wafat</span>
+            <span style={{ color: '#756357' }}>🎗️ Foto Sepia: Sudah Wafat</span>
           </div>
         </div>
       )}

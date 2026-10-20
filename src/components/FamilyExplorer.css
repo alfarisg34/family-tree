@@ -1,0 +1,66 @@
+.family-explorer-toolbar { position: absolute; top: 100px; left: 26px; right: 26px; display: flex; align-items: center; justify-content: space-between; gap: 16px; z-index: 25; }
+.family-explorer-welcome { display: flex; gap: 12px; align-items: center; }
+.family-explorer-heart { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: #f2ddce; color: #a25d3c; }
+.family-explorer-welcome strong { font-family: var(--font-display); font-size: 17px; font-weight: 500; }
+.family-explorer-welcome p { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.family-explorer-actions { display: flex; gap: 8px; }
+.family-explorer-actions button { min-height: 42px; border-radius: 50px; }
+.family-explorer-actions .explorer-help { width: 42px; padding: 0; justify-content: center; }
+.member-avatar { position: relative; display: inline-grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; background: #e8d8c4; color: #7c543b; font-family: var(--font-display); font-size: 17px; overflow: hidden; }
+.member-avatar img { position: absolute; width: 100%; height: 100%; inset: 0; object-fit: cover; }
+.member-avatar.avatar-image-circle { display: grid; width: 100%; height: 100%; font-size: 25px; }
+.family-explorer-dialog { position: fixed; inset: 0; margin: auto; padding: 0; border: 1px solid #decbba; border-radius: 26px; width: min(590px, calc(100% - 32px)); max-height: calc(100dvh - 48px); color: var(--text-primary); background: #fffaf3; box-shadow: 0 24px 80px rgba(79, 46, 26, .2); }
+.family-explorer-dialog::backdrop { background: rgba(67, 46, 34, .32); backdrop-filter: blur(5px); }
+.family-explorer-dialog-content { padding: 28px; }
+.family-explorer-dialog header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 24px; }
+.family-explorer-dialog h2 { font-family: var(--font-serif); font-size: 25px; font-weight: 600; }
+.explorer-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: #9b6243; margin-bottom: 8px; }
+.explorer-search { display: flex; gap: 10px; align-items: center; background: #fffdf9; border: 1px solid #dbc6b2; padding: 11px 14px; border-radius: 14px; color: #917053; }
+.explorer-search:focus-within { outline: 3px solid #edd9c5; }
+.explorer-search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-primary); font-size: 14px; }
+.explorer-search button { display: grid; place-items: center; border: none; background: none; color: inherit; cursor: pointer; min-width: 26px; min-height: 26px; }
+.explorer-filter-row { display: flex; gap: 10px; align-items: center; margin-block: 16px; font-size: 12px; color: var(--text-secondary); }
+.explorer-filter-row select { border: 1px solid #e0ccb7; border-radius: 10px; padding: 8px; background: #fffdf9; color: var(--text-primary); max-width: 230px; min-width: 0; }
+.explorer-filter-row > span { margin-left: auto; white-space: nowrap; }
+.explorer-member-list { max-height: 45dvh; min-height: 120px; overflow-y: auto; padding: 4px; }
+.explorer-member { display: flex; width: 100%; align-items: center; gap: 13px; padding: 12px 8px; border: 0; border-bottom: 1px solid #eee0d1; background: transparent; text-align: left; color: var(--text-primary); border-radius: 12px; cursor: pointer; }
+.explorer-member:hover { background: #f3eadc; }
+.explorer-member > span:nth-child(2) { flex: 1; min-width: 0; }
+.explorer-member strong { display: block; font-size: 14px; line-height: 1.5; }
+.explorer-member small { display: block; font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+.explorer-member > svg { color: #a48a71; flex-shrink: 0; }
+.explorer-footnote { font-size: 11px; line-height: 1.8; margin-block: 20px 0; color: var(--text-secondary); }
+.explorer-no-results { padding: 30px 15px; text-align: center; color: #806d5f; }
+.explorer-no-results h3 { font-family: var(--font-display); font-size: 20px; color: var(--text-primary); margin: 15px 0 8px; }
+.explorer-no-results p { font-size: 13px; margin-bottom: 20px; }
+.explorer-help-intro { color: var(--text-secondary); font-size: 14px; line-height: 1.8; margin-bottom: 22px; }
+.explorer-help-step { display: flex; gap: 16px; margin-block: 22px; }
+.explorer-help-step > svg { box-sizing: content-box; width: 22px; height: 22px; flex-shrink: 0; color: #a0603e; padding: 12px; background: #f5e3d1; border-radius: 14px; }
+.explorer-help-step h3 { font-family: var(--font-display); font-size: 18px; margin-bottom: 5px; }
+.explorer-help-step p { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.explorer-help-legend { display: flex; flex-wrap: wrap; gap: 15px; padding: 18px; background: #f1eddf; border-radius: 14px; }
+.explorer-help-legend span { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.explorer-line { width: 22px; border-top: 3px solid #ba744e; }
+.explorer-line.child { border-color: #679486; }
+.explorer-line.adopted { border-top: 3px dashed #5b819b; }
+.family-explorer-dialog-content > .btn-nav-primary { margin-top: 22px; min-height: 44px; }
+.family-empty-state { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -40%); width: min(420px, calc(100% - 40px)); text-align: center; color: #9b6a45; }
+.family-empty-state h2 { font-family: var(--font-serif); font-size: 25px; margin: 20px 0 12px; color: var(--text-primary); }
+.family-empty-state p { font-size: 14px; line-height: 1.8; color: var(--text-secondary); }
+@media (max-width: 768px) {
+  .family-explorer-toolbar { top: 87px; left: 14px; right: 14px; gap: 8px; }
+  .family-explorer-heart, .explorer-fit { display: none; }
+  .family-explorer-welcome strong { font-size: 13px; }
+  .family-explorer-welcome p { font-size: 10px; }
+  .family-explorer-actions { gap: 5px; }
+  .family-explorer-actions .btn-nav-primary { padding-inline: 12px; font-size: 11px; gap: 5px; }
+  .family-explorer-dialog-content { padding: 22px 18px; }
+  .family-explorer-dialog h2 { font-size: 23px; }
+  .explorer-search input { font-size: 16px; }
+  .explorer-filter-row { gap: 7px; font-size: 11px; }
+  .explorer-filter-row select { max-width: 180px; }
+}
+@media (max-width: 380px) {
+  .family-explorer-welcome strong { display: none; }
+  .family-explorer-welcome p { max-width: 110px; line-height: 1.6; }
+}

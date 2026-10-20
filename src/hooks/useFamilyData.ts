@@ -1,17 +1,16 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FamilyData, FamilyMember, ParentRelationType, MarriageStatus, RootGenerationType } from '../types/family';
 import { getInitialFamilyDataBySlug } from '../data/sampleFamily';
 import { getNextOlderRootGenerationType } from '../utils/dateUtils';
-import { isSupabaseConfigured } from '../utils/supabaseClient';
+import { isDatabaseConfigured } from '../services/databaseService';
+import { useAdminSession } from './useAdminSession';
 import {
-  fetchFamilyDataFromSupabase,
-  saveMemberToSupabase,
-  deleteMemberFromSupabase,
-  syncEntireTreeToSupabase,
-  fetchAllFamilyTreesFromSupabase
-} from '../services/supabaseService';
-
-const ADMIN_STORAGE_KEY = 'family_tree_admin_session';
+  fetchFamilyData,
+  saveMember as saveMemberToDatabase,
+  deleteMember as deleteMemberFromDatabase,
+  syncEntireTree,
+  fetchAllFamilyTrees
+} from '../services/databaseService';
 
 export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
   const storageKey = `family_tree_data_${currentSlug}`;
@@ -34,32 +33,24 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
     { id: '3', slug: 'keluargahajjahrobbanisah', tree_name: 'Keluarga Besar Hajjah Robbanisah' }
   ]);
 
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(ADMIN_STORAGE_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const { isAdmin, loginAdmin, logoutAdmin } = useAdminSession();
 
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
-  const loadedSlugRef = useRef<string>('');
 
   // Fetch all family trees list for switcher
   useEffect(() => {
-    if (isSupabaseConfigured()) {
-      fetchAllFamilyTreesFromSupabase().then((trees) => {
+    if (isDatabaseConfigured() && isAdmin) {
+      fetchAllFamilyTrees().then((trees) => {
         if (trees && trees.length > 0) {
           setAllTrees(trees);
         }
-      });
+      }).catch((error) => console.warn('Daftar keluarga tidak dapat dimuat:', error));
     }
-  }, [currentSlug]);
+  }, [currentSlug, isAdmin]);
 
-  // Load tree data for currentSlug from Supabase
+  // Load tree data for currentSlug from Neon
   useEffect(() => {
-    if (loadedSlugRef.current !== currentSlug) {
-      loadedSlugRef.current = currentSlug;
+    let active = true;
 
       // First check local cache
       const localSaved = localStorage.getItem(`family_tree_data_${currentSlug}`);
@@ -71,23 +62,23 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
         setFamilyData(getInitialFamilyDataBySlug(currentSlug));
       }
 
-      // Then fetch remote from Supabase
-      if (isSupabaseConfigured()) {
+      // Then fetch remote from Neon
+      if (isDatabaseConfigured()) {
         setIsCloudSyncing(true);
-        fetchFamilyDataFromSupabase(currentSlug)
+        fetchFamilyData(currentSlug, { readOnly: true })
           .then((remoteData) => {
-            if (remoteData && Object.keys(remoteData.members).length > 0) {
+            if (active && remoteData) {
               setFamilyData(remoteData);
             }
           })
           .catch((e) => {
-            console.warn(`Could not sync slug ${currentSlug} with Supabase:`, e);
+            console.warn(`Could not sync slug ${currentSlug} with Neon:`, e);
           })
           .finally(() => {
-            setIsCloudSyncing(false);
+            if (active) setIsCloudSyncing(false);
           });
       }
-    }
+    return () => { active = false; };
   }, [currentSlug]);
 
   // Save to localStorage whenever data changes
@@ -98,21 +89,6 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
       console.error('Failed to save to localStorage', e);
     }
   }, [familyData, currentSlug]);
-
-  // Admin login / logout
-  const loginAdmin = (password: string): boolean => {
-    if (password === 'admin' || password === 'keluarga123' || password === 'admin123') {
-      setIsAdmin(true);
-      localStorage.setItem(ADMIN_STORAGE_KEY, 'true');
-      return true;
-    }
-    return false;
-  };
-
-  const logoutAdmin = () => {
-    setIsAdmin(false);
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
-  };
 
   // Add / Update member with bidirectional relation synchronization
   const saveMember = (member: FamilyMember) => {
@@ -149,8 +125,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
             spouses: newSpouseList
           };
 
-          if (isSupabaseConfigured()) {
-            saveMemberToSupabase(updatedMembers[sp.spouseId], treeId);
+          if (isDatabaseConfigured()) {
+            saveMemberToDatabase(updatedMembers[sp.spouseId], treeId);
           }
         }
       });
@@ -165,8 +141,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
               ...otherMember,
               spouses: cleanedSpouses
             };
-            if (isSupabaseConfigured()) {
-              saveMemberToSupabase(updatedMembers[otherId], treeId);
+            if (isDatabaseConfigured()) {
+              saveMemberToDatabase(updatedMembers[otherId], treeId);
             }
           }
         }
@@ -178,8 +154,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
         updatedAt: new Date().toISOString()
       };
 
-      if (isSupabaseConfigured()) {
-        saveMemberToSupabase(member, treeId);
+      if (isDatabaseConfigured()) {
+        saveMemberToDatabase(member, treeId);
       }
 
       return newData;
@@ -222,8 +198,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
               ...m,
               generation: newGen
             };
-            if (isSupabaseConfigured()) {
-              saveMemberToSupabase(updatedMembers[key], treeId);
+            if (isDatabaseConfigured()) {
+              saveMemberToDatabase(updatedMembers[key], treeId);
             }
           });
           generation = 1;
@@ -261,8 +237,8 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
                 ...m,
                 order: (m.order || 1) + 1
               };
-              if (isSupabaseConfigured()) {
-                saveMemberToSupabase(updatedMembers[key], treeId);
+              if (isDatabaseConfigured()) {
+                saveMemberToDatabase(updatedMembers[key], treeId);
               }
             }
           }
@@ -331,10 +307,10 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
 
       updatedMembers[newId] = newMember;
 
-      if (isSupabaseConfigured()) {
-        saveMemberToSupabase(newMember, treeId);
+      if (isDatabaseConfigured()) {
+        saveMemberToDatabase(newMember, treeId);
         if (updatedMembers[sourceMemberId]) {
-          saveMemberToSupabase(updatedMembers[sourceMemberId], treeId);
+          saveMemberToDatabase(updatedMembers[sourceMemberId], treeId);
         }
       }
 
@@ -376,14 +352,14 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
             parentIds: newParentIds,
             spouses: newSpouses
           };
-          if (isSupabaseConfigured()) {
-            saveMemberToSupabase(updatedMembers[key], treeId);
+          if (isDatabaseConfigured()) {
+            saveMemberToDatabase(updatedMembers[key], treeId);
           }
         }
       });
 
-      if (isSupabaseConfigured()) {
-        deleteMemberFromSupabase(id);
+      if (isDatabaseConfigured()) {
+        deleteMemberFromDatabase(id, treeId);
       }
 
       return {
@@ -401,17 +377,17 @@ export function useFamilyData(currentSlug: string = 'keluargabanisukandi') {
         ...metadata,
         updatedAt: new Date().toISOString()
       };
-      if (isSupabaseConfigured()) {
-        syncEntireTreeToSupabase(updated, currentSlug);
+      if (isDatabaseConfigured()) {
+        syncEntireTree(updated, currentSlug);
       }
       return updated;
     });
   };
 
-  const updateEntireFamilyData = (newData: FamilyData) => {
+  const updateEntireFamilyData = (newData: FamilyData, syncRemote = true) => {
     setFamilyData(newData);
-    if (isSupabaseConfigured()) {
-      syncEntireTreeToSupabase(newData, currentSlug);
+    if (syncRemote && isDatabaseConfigured()) {
+      syncEntireTree(newData, currentSlug);
     }
   };
 

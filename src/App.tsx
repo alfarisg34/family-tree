@@ -14,6 +14,9 @@ import { MemberDetailModal } from './components/MemberDetailModal';
 import { MemberFormModal } from './components/MemberFormModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { TreeSettingsModal } from './components/TreeSettingsModal';
+import { LandingPage } from './components/LandingPage';
+import { AdminArea } from './components/AdminArea';
+import { FamilyExplorer } from './components/FamilyExplorer';
 
 // Helper to extract clean slug from URL
 function getSlugFromUrl(): string {
@@ -22,22 +25,29 @@ function getSlugFromUrl(): string {
 }
 
 export const App: React.FC = () => {
-  const [currentSlug, setCurrentSlug] = useState<string>(getSlugFromUrl);
+  const [path, setPath] = useState(getSlugFromUrl);
 
-  // Sync with browser URL changes (Back / Forward button)
   useEffect(() => {
-    const handlePopState = () => {
-      setCurrentSlug(getSlugFromUrl());
-    };
+    const handlePopState = () => setPath(getSlugFromUrl());
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  const navigate = (destination: string, replace = false) => {
+    window.history[replace ? 'replaceState' : 'pushState']({}, '', destination);
+    setPath(getSlugFromUrl());
+  };
+
+  if (['admin', 'admin/login', 'manage'].includes(path)) return <AdminArea path={path} onNavigate={navigate} />;
+  return window.location.pathname.replace(/\//g, '') === '' ? <LandingPage /> : <FamilyTreeApp key={path} currentSlug={path} onNavigate={navigate} />;
+};
+
+const FamilyTreeApp: React.FC<{ currentSlug: string; onNavigate: (path: string) => void }> = ({ currentSlug, onNavigate }) => {
+
   // Update browser URL on tree navigation without full page reload
   const handleNavigateToSlug = (newSlug: string) => {
     const clean = newSlug.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'keluargabanisukandi';
-    window.history.pushState({}, '', '/' + clean);
-    setCurrentSlug(clean);
+    onNavigate('/' + clean);
     setSelectedMemberId(null);
     setHighlightedMemberId(null);
   };
@@ -60,6 +70,17 @@ export const App: React.FC = () => {
     return computeFamilyTreeLayout(familyData);
   }, [familyData]);
 
+  const viewBounds = useMemo(() => {
+    const members = Object.values(layout.nodes);
+    if (!members.length) return layout.bounds;
+    return {
+      minX: Math.min(...members.map(node => node.x)) - 150,
+      maxX: Math.max(...members.map(node => node.x)) + 150,
+      minY: Math.min(...members.map(node => node.y)) - 140,
+      maxY: Math.max(...members.map(node => node.y)) + 140,
+    };
+  }, [layout]);
+
   // Pan & Zoom Map Engine with Marker Clustering & Progressive Disclosure
   const {
     viewport,
@@ -76,7 +97,7 @@ export const App: React.FC = () => {
     zoomToCluster,
     bindContainerEvents
   } = usePanZoom({
-    bounds: layout.bounds,
+    bounds: viewBounds,
     initialScale: 0.85
   });
 
@@ -97,11 +118,11 @@ export const App: React.FC = () => {
   // Keyboard Shortcuts (F to fit, Esc to deselect, + / - to zoom)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+      if (e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement).closest('input, textarea, select, button, dialog, [contenteditable="true"]') || document.querySelector('dialog[open], .modal-backdrop')) {
         return;
       }
       if (e.key === 'f' || e.key === 'F') {
-        fitView(layout.bounds);
+        fitView(viewBounds);
       } else if (e.key === 'Escape') {
         setSelectedMemberId(null);
         setHighlightedMemberId(null);
@@ -115,15 +136,16 @@ export const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fitView, resetView, zoomIn, zoomOut, layout.bounds]);
+  }, [fitView, resetView, zoomIn, zoomOut, viewBounds]);
 
   // Auto-fit on slug switch or first load
   useEffect(() => {
+    if (isCloudSyncing) return;
     const timer = setTimeout(() => {
-      fitView(layout.bounds);
+      fitView(viewBounds);
     }, 200);
     return () => clearTimeout(timer);
-  }, [currentSlug, Object.keys(familyData.members).length]);
+  }, [currentSlug, isCloudSyncing, fitView, viewBounds]);
 
   // Handle clicking a node on the tree
   const handleNodeClick = (node: LayoutNode) => {
@@ -217,12 +239,14 @@ export const App: React.FC = () => {
         onOpenTreeSettings={() => setIsTreeSettingsOpen(true)}
         onFlyToMember={handleFlyToMember}
       />
+      <FamilyExplorer familyData={familyData} loading={isCloudSyncing} onFit={() => fitView(viewBounds)} onSelectMember={handleSelectMemberInModal} />
 
       {/* 2. Map Canvas (Drag & Pinch Zoomable Container) */}
       <main
         className={`map-canvas-container ${isDragging ? 'is-dragging' : ''}`}
         ref={containerRef}
         {...bindContainerEvents}
+        aria-label="Peta silsilah keluarga interaktif"
       >
         <TreeCanvas
           layout={layout}
@@ -248,13 +272,14 @@ export const App: React.FC = () => {
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onReset={resetView}
-        onFit={() => fitView(layout.bounds)}
+        onFit={() => fitView(viewBounds)}
       />
 
       {/* 4. Minimap Radar View */}
       <Minimap
         layout={layout}
         viewport={viewport}
+        containerSize={containerSize}
         onNavigate={(targetWorldX, targetWorldY) => {
           flyToNode(targetWorldX, targetWorldY, viewport.scale);
         }}

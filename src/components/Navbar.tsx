@@ -104,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isSearchOpen || searchResults.length === 0) return;
 
-    if (e.key === 'Tab' || e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (e.shiftKey) {
         setSelectedIndex((prev) => (prev <= 0 ? searchResults.length - 1 : prev - 1));
@@ -208,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 top: 'calc(100% + 8px)',
                 left: 0,
                 right: 0,
-                background: '#0f172a',
+                background: '#fffdf9',
                 border: '1px solid var(--border-glass-highlight)',
                 borderRadius: 'var(--radius-md)',
                 boxShadow: 'var(--shadow-elevated)',
@@ -229,8 +229,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       alignItems: 'center',
                       gap: 12,
                       cursor: 'pointer',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                      background: isHighlighted ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+                      borderBottom: '1px solid rgba(123, 88, 61, 0.05)',
+                      background: isHighlighted ? 'rgba(185, 95, 60, 0.2)' : 'transparent',
                       borderLeft: isHighlighted ? '3px solid var(--accent-gold)' : '3px solid transparent',
                       transition: 'all 0.15s ease'
                     }}
@@ -248,7 +248,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                     />
                     <div style={{ flex: 1, overflow: 'hidden' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? 'var(--text-gold)' : '#f8fafc', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? 'var(--text-gold)' : '#3e3028', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                         {m.fullName}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
@@ -266,9 +266,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <>
           {/* Brand / Multi-Family Tree Switcher */}
           <div className="nav-brand-section" ref={switcherRef}>
-            <div className="nav-logo-icon">
+            <a className="nav-logo-icon" href="/" aria-label="Kembali ke beranda" title="Kembali ke beranda">
               <GitGraph size={20} />
-            </div>
+            </a>
             
             <div
               className={`nav-brand-info ${isAdmin ? 'is-clickable' : ''}`}
@@ -300,7 +300,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   top: 'calc(100% + 10px)',
                   left: 0,
                   minWidth: 300,
-                  background: '#0f172a',
+                  background: '#fffdf9',
                   border: '1px solid var(--border-glass-highlight)',
                   borderRadius: 'var(--radius-md)',
                   boxShadow: 'var(--shadow-elevated)',
@@ -330,7 +330,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           padding: '8px 12px',
                           borderRadius: 'var(--radius-sm)',
                           cursor: 'pointer',
-                          background: isActive ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                          background: isActive ? 'rgba(185, 95, 60, 0.15)' : 'transparent',
                           borderLeft: isActive ? '3px solid var(--accent-gold)' : '3px solid transparent',
                           display: 'flex',
                           alignItems: 'center',
@@ -338,14 +338,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                           transition: 'background 0.15s ease'
                         }}
                         onMouseEnter={(e) => {
-                          if (!isActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                          if (!isActive) e.currentTarget.style.background = 'rgba(123, 88, 61, 0.05)';
                         }}
                         onMouseLeave={(e) => {
                           if (!isActive) e.currentTarget.style.background = 'transparent';
                         }}
                       >
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#3e3028' }}>
                             {tree.tree_name}
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/{tree.slug}</div>
@@ -375,7 +375,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         fontWeight: 700,
                         transition: 'background 0.15s ease'
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(185, 95, 60, 0.1)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
                       <Plus size={15} /> Buat Pohon Silsilah Baru...
@@ -409,7 +409,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   top: 'calc(100% + 8px)',
                   left: 0,
                   right: 0,
-                  background: '#0f172a',
+                  background: '#fffdf9',
                   border: '1px solid var(--border-glass-highlight)',
                   borderRadius: 'var(--radius-md)',
                   boxShadow: 'var(--shadow-elevated)',
@@ -430,8 +430,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                         alignItems: 'center',
                         gap: 12,
                         cursor: 'pointer',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        background: isHighlighted ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+                        borderBottom: '1px solid rgba(123, 88, 61, 0.05)',
+                        background: isHighlighted ? 'rgba(185, 95, 60, 0.2)' : 'transparent',
                         borderLeft: isHighlighted ? '3px solid var(--accent-gold)' : '3px solid transparent',
                         transition: 'all 0.15s ease'
                       }}
@@ -449,7 +449,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                       />
                       <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? 'var(--text-gold)' : '#f8fafc', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? 'var(--text-gold)' : '#3e3028', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                           {m.fullName}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
@@ -457,7 +457,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </div>
                       </div>
                       {isHighlighted && (
-                        <span style={{ fontSize: 10.5, color: 'var(--accent-gold)', fontWeight: 700, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '2px 6px', borderRadius: 4 }}>
+                        <span style={{ fontSize: 10.5, color: 'var(--accent-gold)', fontWeight: 700, background: 'rgba(185, 95, 60, 0.15)', border: '1px solid rgba(185, 95, 60, 0.35)', padding: '2px 6px', borderRadius: 4 }}>
                           ↵ Enter
                         </span>
                       )}

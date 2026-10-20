@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 import type { FamilyData, RootGenerationType } from '../types/family';
 import { getGenerationLabel } from '../utils/dateUtils';
 import { Settings, X, Save, Check } from 'lucide-react';
@@ -17,6 +18,7 @@ export const TreeSettingsModal: React.FC<TreeSettingsModalProps> = ({
   onClose
 }) => {
   const [treeName, setTreeName] = useState(familyData.familyTreeName || '');
+  const dialogRef = useAccessibleDialog(onClose);
   const [description, setDescription] = useState(familyData.description || '');
   const [rootGenType, setRootGenType] = useState<RootGenerationType>(familyData.rootGenerationType || 'buyut');
 
@@ -104,6 +106,7 @@ export const TreeSettingsModal: React.FC<TreeSettingsModalProps> = ({
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-content-card"
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label="Informasi keluarga" tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 560, width: '92vw' }}
       >
@@ -123,7 +126,7 @@ export const TreeSettingsModal: React.FC<TreeSettingsModalProps> = ({
                 width: 36,
                 height: 36,
                 borderRadius: '50%',
-                background: 'rgba(245, 158, 11, 0.15)',
+                background: 'rgba(185, 95, 60, 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -133,7 +136,7 @@ export const TreeSettingsModal: React.FC<TreeSettingsModalProps> = ({
               <Settings size={18} />
             </div>
             <div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#f8fafc' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#3e3028' }}>
                 Pengaturan Silsilah Keluarga
               </h3>
               <p style={{ fontSize: 11.5, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
