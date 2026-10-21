@@ -40,6 +40,7 @@ Middleware Vite menjalankan `/api/data` di komputer lokal. `npm run preview` jug
 | Alamat | Fungsi |
 | --- | --- |
 | `/` | Pengenalan aplikasi; tidak menampilkan daftar atau tautan keluarga tertentu. |
+| `/changelog` | Catatan rilis publik; tautan dan versi tersedia pada footer beranda. |
 | `/admin/login` | Login menggunakan `ADMIN_PASSWORD`, tanpa username. |
 | `/admin` | Dashboard; dialihkan ke login jika sesi belum tersedia. |
 | `/manage` | Tambah keluarga, ubah informasi keluarga, tambah/edit anggota, salin tautan. Memerlukan login. |

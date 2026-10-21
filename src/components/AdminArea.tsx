@@ -63,8 +63,8 @@ export function AdminArea({ path, onNavigate }: AdminAreaProps) {
   const createFamily = async (event: FormEvent) => {
     event.preventDefault();
     const cleanSlug = slug.trim().toLowerCase();
-    if (!/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(cleanSlug) || ['admin', 'manage', 'api'].includes(cleanSlug)) {
-      setNotice('Gunakan alamat berupa huruf kecil, angka, tanda - atau _. Alamat admin dan manage tidak dapat digunakan.');
+    if (!/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(cleanSlug) || ['admin', 'manage', 'api', 'changelog'].includes(cleanSlug)) {
+      setNotice('Gunakan alamat berupa huruf kecil, angka, tanda - atau _. Alamat admin, manage, api, dan changelog tidak dapat digunakan.');
       return;
     }
     if (families.some((family) => family.slug === cleanSlug)) { setNotice('Alamat keluarga sudah digunakan.'); return; }

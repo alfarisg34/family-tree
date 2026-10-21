@@ -37,7 +37,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
   const [isMobile, setIsMobile] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    return window.innerWidth < 768 || ('ontouchstart' in window);
+    return window.innerWidth < 768;
   });
 
   // Track container size & mobile status on resize
@@ -51,7 +51,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
       } else {
         setContainerSize({ width: window.innerWidth, height: window.innerHeight });
       }
-      setIsMobile(window.innerWidth < 768 || ('ontouchstart' in window));
+      setIsMobile(window.innerWidth < 768);
     };
 
     handleResize();
@@ -109,15 +109,15 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   }, [viewport.scale, zoomAt]);
 
   // Reset to initial centered scale
-  const resetView = useCallback(() => {
+  const resetView = useCallback((targetBounds = bounds) => {
     if (!containerRef.current) {
       setViewport({ x: 0, y: 0, scale: 0.85 });
       return;
     }
     const rect = containerRef.current.getBoundingClientRect();
     setViewport({
-      x: rect.width / 2 - (bounds ? (bounds.minX + bounds.maxX) / 2 : 0) * 0.85,
-      y: rect.height / 2 - (bounds ? (bounds.minY + bounds.maxY) / 2 : 0) * 0.85,
+      x: rect.width / 2 - (targetBounds ? (targetBounds.minX + targetBounds.maxX) / 2 : 0) * 0.85,
+      y: 68 + (rect.height - 68) / 2 - (targetBounds ? (targetBounds.minY + targetBounds.maxY) / 2 : 0) * 0.85,
       scale: 0.85
     });
   }, [bounds]);
@@ -146,18 +146,18 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   }, []);
 
   // Progressive disclosure zoom to cluster bounds
-  const zoomToCluster = useCallback((clusterBounds: { minX: number; maxX: number; minY: number; maxY: number }, targetScale = 1.05) => {
+  const zoomToCluster = useCallback((clusterBounds: { minX: number; maxX: number; minY: number; maxY: number }) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const centerX = (clusterBounds.minX + clusterBounds.maxX) / 2;
-    const centerY = (clusterBounds.minY + clusterBounds.maxY) / 2;
-
-    setViewport({
-      x: rect.width / 2 - centerX * targetScale,
-      y: rect.height / 2 - centerY * targetScale,
-      scale: targetScale
-    });
-  }, []);
+    // Reserve space for the breadcrumb and compensated member cards, including labels.
+    const fitted = fitTreeViewport({
+      minX: clusterBounds.minX - 160,
+      maxX: clusterBounds.maxX + 160,
+      minY: clusterBounds.minY - 160,
+      maxY: clusterBounds.maxY + 160,
+    }, { width: rect.width, height: Math.max(1, rect.height - 68) }, minScale);
+    setViewport({ ...fitted, y: fitted.y + 68 });
+  }, [minScale]);
 
   // Mouse wheel handler
   useEffect(() => {
@@ -165,6 +165,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
+      if ((e.target as HTMLElement).closest('.family-overview, .cluster-hover-tooltip')) return;
       e.preventDefault();
       const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 300 : 1);
       const zoomFactor = Math.exp(-Math.max(-120, Math.min(120, delta)) * .002);
@@ -194,6 +195,9 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
     const handleTouchStartNative = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
+      // A fresh tap must not inherit click suppression from a previous pan/pinch.
+      if (e.touches.length === 1) dragMovedRef.current = false;
+      if (target.closest('.family-overview')) return;
       if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section, .cluster-hover-tooltip')) {
         return;
       }
@@ -303,6 +307,9 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.pointerType === 'touch') return;
     if (e.button !== 0) return;
+
+    // Reset before skipping buttons, so navigation still works after dragging the map.
+    dragMovedRef.current = false;
     
     const target = e.target as HTMLElement;
     if (target.closest('button, input, select, textarea, .modal-backdrop, .nav-actions-section, .cluster-hover-tooltip')) {
@@ -342,6 +349,8 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
 
   return {
     viewport,
+    minScale,
+    maxScale,
     setViewport,
     lodLevel,
     zoomTier,
@@ -362,7 +371,11 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
       onPointerUp: handlePointerUp,
       onPointerCancel: handlePointerUp,
       onClickCapture: (event: React.MouseEvent) => {
-        if (dragMovedRef.current && event.detail > 0) { event.preventDefault(); event.stopPropagation(); }
+        if (dragMovedRef.current && event.detail > 0) {
+          dragMovedRef.current = false;
+          event.preventDefault();
+          event.stopPropagation();
+        }
       },
       onPointerLeave: handlePointerUp
     }

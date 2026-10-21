@@ -24,7 +24,7 @@ export async function initializeDatabase(sql = database()) {
 }
 
 export function validSlug(slug) {
-  return typeof slug === 'string' && /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(slug) && !['admin', 'manage', 'api'].includes(slug);
+  return typeof slug === 'string' && /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(slug) && !['admin', 'manage', 'api', 'changelog'].includes(slug);
 }
 
 export function validateFamily(data) {

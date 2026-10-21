@@ -1,5 +1,5 @@
 import { MemberAvatar } from './MemberAvatar';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { ClusterNode, ZoomTier, RootGenerationType } from '../types/family';
 import { Users, ZoomIn, ChevronRight } from 'lucide-react';
 import { getGenerationLabel } from '../utils/dateUtils';
@@ -21,6 +21,20 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
   onClusterClick
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openPreview = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+    setIsHovered(true);
+  };
+  const closePreviewSoon = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => {
+      setIsHovered(false);
+      closeTimer.current = null;
+    }, 300);
+  };
+  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);
   const leader = cluster.leaderNode.member;
 
   // Scale compensation so cluster remains crisp and easily tappable/clickable across zoom levels
@@ -51,8 +65,8 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
         zIndex: isHovered ? 60 : 25
       }}
       onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={openPreview}
+      onMouseLeave={closePreviewSoon}
       role="button"
       tabIndex={0}
       onKeyDown={(event) => {
@@ -122,7 +136,7 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
 
         {/* Hover / Active Preview Tooltip */}
         {isHovered && !isMobile && (
-          <div className="cluster-hover-tooltip" onClick={(e) => e.stopPropagation()}>
+          <div className="cluster-hover-tooltip" onClick={(e) => e.stopPropagation()} onMouseEnter={openPreview} onMouseLeave={closePreviewSoon}>
             <div className="cluster-tooltip-header">
               <div className="cluster-tooltip-title">
                 {cluster.label}
@@ -133,7 +147,7 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
             </div>
 
             <div className="cluster-tooltip-list">
-              {cluster.memberNodes.slice(0, 5).map((node) => (
+              {cluster.memberNodes.map((node) => (
                 <div key={node.id} className="cluster-tooltip-member-item">
                   <MemberAvatar src={node.member.avatar} name={node.member.fullName}
                     className="cluster-tooltip-avatar"
@@ -144,11 +158,6 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({
                   </div>
                 </div>
               ))}
-              {cluster.memberNodes.length > 5 && (
-                <div className="cluster-tooltip-more">
-                  +{cluster.memberNodes.length - 5} anggota lainnya...
-                </div>
-              )}
             </div>
 
             <button

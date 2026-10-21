@@ -21,7 +21,7 @@ export function FamilyExplorer({ familyData, onSelectMember, onFit, loading }: {
   }, [panel]);
   return <>
     <section className="family-explorer-toolbar" aria-label="Jelajahi keluarga">
-      <div className="family-explorer-welcome"><span className="family-explorer-heart"><Heart size={18} /></span><div><strong>Setiap cabang, sebuah cerita.</strong><p>{loading ? 'Memuat cerita keluarga…' : `${members.length} anggota · ${generations.length} generasi terhubung`}</p></div></div>
+      <div className="family-explorer-welcome"><span className="family-explorer-heart"><Heart size={18} /></span><div><strong>Setiap keluarga, sebuah cerita.</strong><p>{loading ? 'Memuat cerita keluarga…' : `${members.length} anggota · ${generations.length} generasi terhubung`}</p></div></div>
       <div className="family-explorer-actions">
         <button className="btn-nav-primary" onClick={() => setPanel('members')}><Users size={17} /><span>Daftar anggota</span></button>
         <button className="btn-nav-glass explorer-fit" onClick={onFit}><Maximize size={16} /><span>Lihat semua</span></button>
@@ -41,9 +41,9 @@ export function FamilyExplorer({ familyData, onSelectMember, onFit, loading }: {
           </button>)}{filtered.length === 0 && <div className="explorer-no-results"><Search size={30} /><h3>Belum menemukan yang dicari</h3><p>Coba nama panggilan atau pilih generasi lain.</p><button className="btn-nav-glass" onClick={() => { setQuery(''); setGeneration('all'); }}>Tampilkan semua anggota</button></div>}</div>
           <p className="explorer-footnote">Pilih anggota untuk membaca profil dan mengenal hubungan keluarganya.</p>
         </> : <>
-          <p className="explorer-help-intro">Mulai dari satu nama, lalu ikuti cabangnya. Ada banyak cerita untuk ditemukan.</p>
+          <p className="explorer-help-intro">Mulai dari satu nama, lalu kenali keluarganya. Ada banyak cerita untuk ditemukan.</p>
           <div className="explorer-help-step"><Move /><div><h3>Geser untuk menjelajah</h3><p>Tarik area peta dengan mouse, atau geser dengan satu jari di ponsel.</p></div></div>
-          <div className="explorer-help-step"><ZoomIn /><div><h3>Dekatkan untuk mengenal</h3><p>Gunakan tombol + dan −, gulir mouse, atau cubit dengan dua jari. Pilih kelompok anggota untuk membuka cabangnya.</p></div></div>
+          <div className="explorer-help-step"><ZoomIn /><div><h3>Dekatkan untuk mengenal</h3><p>Gunakan tombol + dan −, gulir mouse, atau cubit dengan dua jari. Pilih kelompok anggota untuk membuka keluarganya.</p></div></div>
           <div className="explorer-help-step"><MousePointer2 /><div><h3>Ketuk foto, temukan ceritanya</h3><p>Baca profil, lihat kenangan, dan telusuri orang tua, pasangan, atau anak dari halaman profil.</p></div></div>
           <div className="explorer-help-legend"><span><i className="explorer-line marriage" /> Pasangan</span><span><i className="explorer-line child" /> Orang tua & anak</span><span><i className="explorer-line adopted" /> Anak angkat / asuh</span></div>
           <p className="explorer-footnote">Keyboard: F untuk melihat semua, + / − untuk zoom, dan Esc untuk menutup profil.</p>

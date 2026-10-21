@@ -4,10 +4,10 @@ import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 import {
   type FamilyMember,
   type FamilyData,
-  type GalleryPhoto,
   formatMemberFullName
 } from '../types/family';
 import { PhotoCarousel } from './PhotoCarousel';
+import { getAssociatedGalleryPhotos } from '../utils/gallery';
 import { formatDateID, calculateAge, getGenerationLabel, getWhatsAppUrl } from '../utils/dateUtils';
 import {
   X,
@@ -197,46 +197,9 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   // Find all photos associated with this member:
   // 1. Direct gallery photos uploaded for this member
   // 2. Photos uploaded by other members where this member is tagged
-  const allAssociatedPhotos = useMemo(() => {
-    const photosList: GalleryPhoto[] = [];
-    const seenUrls = new Set<string>();
-
-    // 1. Direct gallery photos
-    (member.gallery || []).forEach((p) => {
-      if (p.url && !seenUrls.has(p.url)) {
-        seenUrls.add(p.url);
-        photosList.push(p);
-      }
-    });
-
-    // 2. Photos from other family members with member.id tagged
-    Object.values(familyData.members).forEach((otherMember) => {
-      if (otherMember.id !== member.id && otherMember.gallery) {
-        otherMember.gallery.forEach((otherPhoto) => {
-          if (
-            otherPhoto.url &&
-            !seenUrls.has(otherPhoto.url) &&
-            otherPhoto.taggedMemberIds &&
-            otherPhoto.taggedMemberIds.includes(member.id)
-          ) {
-            seenUrls.add(otherPhoto.url);
-            photosList.push({
-              ...otherPhoto,
-              caption: otherPhoto.caption
-                ? otherPhoto.caption
-                : `Foto bersama ${otherMember.nickname || otherMember.fullName.split(' ')[0]}`
-            });
-          }
-        });
-      }
-    });
-
-    return photosList;
-  }, [member, familyData.members]);
-
-  // Find children
-  const children = Object.values(familyData.members).filter(
-    (m) => m.parentIds && m.parentIds.includes(member.id)
+  const allAssociatedPhotos = useMemo(
+    () => getAssociatedGalleryPhotos(member, familyData.members),
+    [member, familyData.members]
   );
 
   const handleDelete = () => {
@@ -468,6 +431,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                   : 'Dokumentasi Foto Profil (1 Foto)'}
               </div>
               <PhotoCarousel
+                key={member.id}
                 photos={allAssociatedPhotos}
                 defaultAvatar={member.avatar}
                 isDeceased={isDeceased}
@@ -580,6 +544,17 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                                     {desc.gender === 'female' ? '♀' : '♂'}
                                   </span>
                                   {` Anak ke-${desc.order || itemIdx + 1}`}
+                                  {group.level === 1 && (
+                                    <span>
+                                      {' · '}{desc.relationshipToParents === 'adopted'
+                                        ? 'Anak Angkat'
+                                        : desc.relationshipToParents === 'foster'
+                                        ? 'Anak Asuh'
+                                        : desc.relationshipToParents === 'step'
+                                        ? 'Anak Tiri'
+                                        : 'Anak Kandung'}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -678,36 +653,6 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               </div>
             )}
 
-            {/* Anak */}
-            {children.length > 0 && (
-              <div>
-                <div className="relations-category-title">Keturunan / Anak:</div>
-                <div className="relations-chips-row">
-                  {children.map((ch) => (
-                    <div
-                      key={ch.id}
-                      className="relation-chip"
-                      onClick={() => onSelectMember(ch.id)}
-                      title={`Lihat profil ${ch.fullName}`}
-                    >
-                      <MemberAvatar src={ch.avatar} name={ch.fullName} className="relation-chip-avatar"  />
-                      <div>
-                        <div className="relation-chip-name">{ch.fullName}</div>
-                        <div className="relation-chip-role">
-                          {ch.relationshipToParents === 'adopted'
-                            ? '🌱 Anak Angkat'
-                            : ch.relationshipToParents === 'foster'
-                            ? '🤝 Anak Asuh'
-                            : ch.relationshipToParents === 'step'
-                            ? '🌿 Anak Tiri'
-                            : '👶 Anak Kandung'}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Admin Edit & Delete Actions */}

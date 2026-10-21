@@ -28,3 +28,6 @@ playwright-report/
 *.njsproj
 *.sln
 *.sw?
+
+/context/
+.playwright-mcp/

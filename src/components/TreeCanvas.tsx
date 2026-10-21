@@ -12,6 +12,7 @@ interface TreeCanvasProps {
   containerWidth?: number;
   containerHeight?: number;
   isMobile?: boolean;
+  expandAll?: boolean;
   selectedNodeId: string | null;
   highlightedNodeId: string | null;
   isAdmin: boolean;
@@ -28,6 +29,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   containerWidth = 1200,
   containerHeight = 800,
   isMobile = false,
+  expandAll = false,
   selectedNodeId,
   highlightedNodeId,
   isAdmin,
@@ -39,7 +41,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
   // Compute marker clustering & viewport distance culling (spatial virtualization)
   const { visibleClusters, visibleNodes, visibleEdges, zoomTier } = useMemo(() => {
-    if (Object.keys(nodes).length <= 12) {
+    if (expandAll || Object.keys(nodes).length <= 12) {
       return { visibleClusters: [], visibleNodes: Object.values(nodes), visibleEdges: edges, zoomTier: 'medium' as const };
     }
     return computeClusteredTree({
@@ -50,7 +52,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       containerHeight,
       isMobile
     });
-  }, [nodes, edges, viewport, containerWidth, containerHeight, isMobile]);
+  }, [nodes, edges, viewport, containerWidth, containerHeight, isMobile, expandAll]);
 
   // Generation levels visible in current bounds
   const visibleGenLevels = useMemo(() => {
@@ -59,6 +61,10 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
     }
     return generationLevels;
   }, [generationLevels, zoomTier]);
+
+  const compactGenerationLabels = isMobile || viewport.scale < 0.5;
+  const smallGenerationLabels = viewport.scale < 0.16;
+  const mobileGenerationOffset = Math.max(24, Math.min(66, viewport.scale * 80));
 
   const buildSvgPath = (points: Array<{ x: number; y: number }>): string => {
     if (points.length < 2) return '';
@@ -179,14 +185,30 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         <div
           key={lvl.generation}
           className="generation-level-marker"
+          aria-label={`${lvl.name}, ${lvl.count} anggota`}
           style={{
-            top: `${lvl.y}px`,
-            left: `${lvl.minX}px`
+            top: `${isMobile ? lvl.y - mobileGenerationOffset / viewport.scale : lvl.y}px`,
+            left: `${isMobile ? (8 - viewport.x) / viewport.scale : lvl.minX + 250}px`,
+            transform: isMobile ? 'translateY(-50%)' : 'translate(-100%, -50%)'
           }}
         >
-          <div className="generation-level-pill">
-            <span style={{ color: '#3e3028', fontWeight: 700 }}>{lvl.name}</span>
-            <span className="count">{lvl.count} Anggota</span>
+          <div className="generation-level-pill" style={{
+            transform: `scale(${1 / viewport.scale})`,
+            transformOrigin: isMobile ? 'left center' : 'right center',
+            fontSize: smallGenerationLabels ? 10 : 11,
+            lineHeight: smallGenerationLabels ? '12px' : '16px',
+            padding: smallGenerationLabels ? '2px 6px' : '5px 10px',
+            gap: smallGenerationLabels ? 4 : 8,
+            whiteSpace: 'nowrap',
+          }}>
+            <span style={{ color: '#3e3028', fontWeight: 700 }}>
+              {compactGenerationLabels
+                ? lvl.name.split(' (')[0].replace('Generasi', smallGenerationLabels ? 'Gen' : 'Generasi')
+                : lvl.name}
+            </span>
+            <span className="count" style={{ fontSize: 10, lineHeight: smallGenerationLabels ? '12px' : '14px', padding: '0 5px' }}>
+              {lvl.count}{smallGenerationLabels ? '' : ' Anggota'}
+            </span>
           </div>
         </div>
       ))}
@@ -209,7 +231,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         <NodeCard
           key={node.id}
           node={node}
-          lodLevel={Object.keys(nodes).length <= 12 && lodLevel === 'macro' ? 'medium' : lodLevel}
+          lodLevel={expandAll ? 'micro' : Object.keys(nodes).length <= 12 && lodLevel === 'macro' ? 'medium' : lodLevel}
           rootGenerationType={rootGenerationType}
           viewportScale={viewport.scale}
           isMobile={isMobile}

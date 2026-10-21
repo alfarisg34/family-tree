@@ -93,6 +93,9 @@ function buildFamilyLineageTree(allNodes: LayoutNode[]) {
         if (spouseMap.has(node.id) && !spouseMap.get(node.id)!.includes(sp.spouseId)) {
           spouseMap.get(node.id)!.push(sp.spouseId);
         }
+        if (spouseMap.has(sp.spouseId) && !spouseMap.get(sp.spouseId)!.includes(node.id)) {
+          spouseMap.get(sp.spouseId)!.push(node.id);
+        }
       });
     }
   });
@@ -113,20 +116,23 @@ function buildFamilyLineageTree(allNodes: LayoutNode[]) {
         branchNodes.push(node);
         assignedIds.add(node.id);
 
-        // Include spouses of this descendant in the branch
+        // Include the spouse and children linked only to that spouse in the same family.
+        const familyParentIds = [currentId];
         const spouses = spouseMap.get(currentId) || [];
         spouses.forEach(sId => {
           const spNode = nodeById.get(sId);
           if (spNode && !assignedIds.has(spNode.id) && (!spNode.member.parentIds || spNode.member.parentIds.length === 0)) {
             branchNodes.push(spNode);
             assignedIds.add(spNode.id);
+            familyParentIds.push(spNode.id);
           }
         });
 
         // Add children to queue
-        const children = childrenMap.get(currentId) || [];
-        children.forEach(cId => {
-          if (!visited.has(cId)) queue.push(cId);
+        familyParentIds.forEach(parentId => {
+          (childrenMap.get(parentId) || []).forEach(cId => {
+            if (!visited.has(cId)) queue.push(cId);
+          });
         });
       }
     }
@@ -171,7 +177,7 @@ export function computeClusteredTree({
   const zoomTier = getZoomTier(viewport.scale);
   const vpBounds = getViewportWorldBounds(viewport, containerWidth, containerHeight);
 
-  const { getBranchMembers } = buildFamilyLineageTree(allNodes);
+  const { getBranchMembers, childrenMap, spouseMap } = buildFamilyLineageTree(allNodes);
 
   const clusters: ClusterNode[] = [];
   const individualNodes: LayoutNode[] = [];
@@ -200,7 +206,7 @@ export function computeClusteredTree({
     group.forEach(n => nodeToClusterId.set(n.id, clusterId));
 
     const leaderName = leader.member.nickname || leader.member.fullName.split(' ')[0];
-    const label = `Cabang ${leaderName}`;
+    const label = `Keluarga ${leaderName}`;
 
     clusters.push({
       id: clusterId,
@@ -232,7 +238,7 @@ export function computeClusteredTree({
     // Lineage-based Major Branch Clustering:
     // - Gen 1 (Leluhur) remains an individual node at the top.
     // - Each Gen 2 child (Branch Ancestor) collapses with ALL their descendants & spouses
-    //   into a distinct Family Branch Cluster (e.g. "Cabang Hj. Maskanah", "Cabang Hj. Diah").
+    //   into a distinct Family Branch Cluster (e.g. "Keluarga Hj. Maskanah", "Keluarga Hj. Diah").
     // - Lineage lines clearly connect Gen 1 -> each Gen 2 Branch Cluster.
     // =========================================================================
     const sortedNodes = [...allNodes].sort((a, b) => a.generation - b.generation || a.x - b.x);
@@ -292,7 +298,9 @@ export function computeClusteredTree({
       if (assignedNodeIds.has(node.id)) return;
 
       // If this node has descendants, cluster this sub-branch
-      if (node.totalDescendants > 0) {
+      const hasFamilyChildren = (childrenMap.get(node.id)?.length || 0) > 0
+        || (spouseMap.get(node.id) || []).some(id => (childrenMap.get(id)?.length || 0) > 0);
+      if (hasFamilyChildren) {
         const branchMembers = getBranchMembers(node.id, assignedNodeIds);
         if (branchMembers.length > 1) {
           createCluster(node, branchMembers);

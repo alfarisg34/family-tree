@@ -65,6 +65,9 @@
 .landing-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-block: 34px; margin-top: 45px; color: var(--text-secondary); font-size: 11px; border-top: 1px solid var(--border-glass); }
 .landing-footer > span { display: flex; align-items: center; gap: 8px; color: var(--text-gold); }
 .landing-footer a { color: var(--text-secondary); }
+.landing-footer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; }
+.landing-footer-links a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; }
+.landing-version { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; white-space: nowrap; flex-shrink: 0; background: #f1e4d5; color: #88482f; border-radius: 9999px; padding: 3px 7px; }
 @media (max-width: 960px) {
   .landing-hero { gap: 35px; padding-block: 60px; }
   .landing-feature-grid { grid-template-columns: repeat(2, 1fr); }

@@ -1,0 +1,38 @@
+.app-container.has-map .map-canvas-container { bottom: 126px; }
+.floating-controls-panel.map-controls { bottom: max(12px, env(safe-area-inset-bottom)); left: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; z-index: 80; }
+.map-control-status { min-height: 40px; display: flex; flex-direction: column; justify-content: center; gap: 4px; color: #6f5c4d; font-size: 11px; }
+.map-control-status strong { display: flex; align-items: center; gap: 7px; color: #3e3028; font-size: 12px; }
+.map-control-status i { width: 7px; height: 7px; border-radius: 50%; background: #527650; }
+.map-control-status.tier-macro i { background: #b95f3c; }
+.map-control-status.tier-medium i { background: #397c8a; }
+.map-control-actions { display: flex; gap: 8px; align-items: center; }
+.map-controls .control-btn-group { display: flex; flex-direction: row; padding: 3px; gap: 0; border-radius: 16px; }
+.map-controls .control-icon-btn { width: 48px; height: 48px; min-width: 48px; min-height: 48px; }
+.map-controls .control-icon-btn:disabled { opacity: .35; cursor: default; background: transparent; color: #796b60; }
+.map-controls .control-zoom-indicator { min-width: 40px; padding: 0; font-size: 12px; }
+.map-action-button, .map-options summary { display: flex; justify-content: center; align-items: center; gap: 8px; min-height: 54px; padding: 0 14px; border: 1px solid #e8dacb; border-radius: 16px; background: #fffdf9; box-shadow: var(--shadow-subtle); color: #3e3028; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.map-action-button:hover, .map-options summary:hover, .map-options-menu button:hover { background: #f7e4d2; }
+.map-options { position: relative; }
+.map-options summary { width: 54px; padding: 0; list-style: none; }
+.map-options summary::-webkit-details-marker { display: none; }
+.map-options-menu { position: absolute; bottom: calc(100% + 10px); right: 0; min-width: 260px; padding: 6px; background: #fffdf9; border: 1px solid #e8dacb; border-radius: 16px; box-shadow: var(--shadow-elevated); }
+.map-options-menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: transparent; color: #3e3028; padding: 10px 12px; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.map-controls button:focus-visible, .map-options summary:focus-visible { outline: 3px solid #397c8a; outline-offset: 2px; }
+.has-map .world-layer .tree-node-wrapper, .has-map .world-layer .tree-cluster-wrapper { animation: map-entity-reveal 180ms ease-out both; }
+@keyframes map-entity-reveal { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 1100px) and (min-width: 768px) {
+  .has-map .map-legend-drawer { bottom: 132px; right: 20px; }
+}
+@media (max-width: 767px) {
+  .floating-controls-panel.map-controls { left: 10px; right: 10px; gap: 8px; }
+  .map-control-status { max-width: calc(100% - 132px); }
+  .map-control-actions { width: 100%; gap: 6px; }
+  .map-controls .map-reset-button { display: none; }
+  .map-controls .control-zoom-indicator { min-width: 36px; }
+  .map-controls .map-fit-button { flex: 1; min-width: 0; padding: 0 6px; gap: 4px; font-size: 11px; }
+  .map-options summary { width: 48px; min-height: 54px; }
+  .map-options-menu { left: auto; right: 0; max-width: calc(100vw - 20px); }
+  .has-map .minimap-pill-btn { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 64px); min-height: 44px; }
+  .has-map .minimap-panel { bottom: 130px; }
+  .has-map .map-legend-drawer.is-open { bottom: 130px; }
+}

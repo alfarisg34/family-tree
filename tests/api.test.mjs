@@ -52,6 +52,8 @@ test('public readers can open a known family but not reserved or invalid slugs',
   const response = await call(req, { readTree: async (slug) => { assert.equal(slug, data.slug); return data; } });
   assert.deepEqual(response.body, data);
   assert.equal((await call(request('tree&slug=admin'))).statusCode, 400);
+  assert.equal((await call(request('tree&slug=changelog'))).statusCode, 400);
+  assert.equal(validSlug('changelog'), false);
   assert.equal(validSlug('api'), false);
 });
 

@@ -1,0 +1,35 @@
+.changelog-back { display: inline-flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 13px; min-height: 44px; flex-shrink: 0; }
+.changelog-main { max-width: 880px; padding-block: 48px 80px; }
+.changelog-intro { margin-bottom: 44px; }
+.changelog-intro .landing-eyebrow { display: flex; align-items: center; gap: 8px; }
+.changelog-intro h1 { font-family: var(--font-serif); font-size: clamp(32px, 5vw, 48px); margin-block: 12px 16px; }
+.changelog-intro > p:last-child, .changelog-summary { color: var(--text-secondary); font-size: 14px; line-height: 1.8; }
+.changelog-timeline { border-left: 2px solid #e5d4c0; padding-left: 26px; }
+.changelog-release { position: relative; background: var(--bg-secondary); border: 1px solid #e6d7c7; border-radius: 20px; padding: 30px; margin-bottom: 28px; }
+.changelog-release::before { content: ''; position: absolute; left: -34px; top: 34px; width: 12px; height: 12px; border: 3px solid var(--bg-main); border-radius: 50%; background: var(--accent-gold); box-shadow: 0 0 0 1px #d2b89c; }
+.changelog-release-header { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.changelog-version, .landing-version { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; white-space: nowrap; flex-shrink: 0; }
+.changelog-version { font-weight: 700; color: var(--text-primary); font-size: 20px; }
+.changelog-latest { background: #e9f0e2; color: #42643f; padding: 4px 9px; border-radius: 9999px; font-size: 11px; font-weight: 700; }
+.changelog-release time { color: var(--text-secondary); font-size: 12px; margin-left: auto; }
+.changelog-release h2 { font-family: var(--font-display); font-size: 25px; line-height: 1.3; margin-bottom: 12px; }
+.changelog-category { margin-top: 28px; }
+.changelog-category-label { display: inline-flex; padding: 4px 9px; border-radius: 7px; background: #eee5da; color: #65513e; font-size: 11px; font-weight: 700; }
+.category-fitur { background: #e9f0e2; color: #42643f; }
+.category-design { background: #e2eef0; color: #316773; }
+.category-perbaikan { background: #fae9df; color: #92482e; }
+.changelog-category ul { padding-left: 18px; margin-top: 14px; }
+.changelog-category li { padding-left: 4px; margin-block: 14px; }
+.changelog-category li::marker { color: #b6a18c; }
+.changelog-category h4 { font-size: 14px; line-height: 1.6; }
+.changelog-category p { color: var(--text-secondary); font-size: 13px; line-height: 1.8; margin-top: 4px; overflow-wrap: anywhere; }
+@media (max-width: 680px) {
+  .changelog-page .landing-brand { font-size: 14px; }
+  .changelog-main { padding-block: 26px 40px; }
+  .changelog-intro { margin-bottom: 28px; }
+  .changelog-timeline { padding-left: 16px; }
+  .changelog-release { padding: 20px 16px; border-radius: 16px; }
+  .changelog-release::before { left: -24px; }
+  .changelog-release time { width: 100%; margin-left: 0; }
+  .changelog-release h2 { font-size: 22px; }
+}

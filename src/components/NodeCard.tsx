@@ -81,7 +81,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       >
         {/* Progressive disclosure indicator pill for descendants */}
         {(hasHiddenDescendants || (lodLevel === 'macro' && node.totalDescendants > 0)) && (
-          <div className="node-descendant-pill" title={`${node.totalDescendants} Keturunan (Perbesar untuk melihat cabang)`}>
+          <div className="node-descendant-pill" title={`${node.totalDescendants} Keturunan (Perbesar untuk melihat keluarga)`}>
             +{node.totalDescendants}
           </div>
         )}

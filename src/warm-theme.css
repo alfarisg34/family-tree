@@ -146,4 +146,46 @@ button { touch-action: manipulation; }
   .minimap-pill-btn { padding-inline: 10px; }
 }
 
-@media (max-width: 768px) { .generation-level-marker, .tree-generation-line { display: none; } }
+@media (max-width: 768px) { .tree-generation-line { display: none; } }
+
+/* Compact desktop chrome keeps the family map as the main work surface. */
+@media (min-width: 769px) {
+  .has-map .app-navbar { top: 8px; left: 12px; right: 12px; min-height: 48px; padding: 6px 12px; border-radius: 14px; gap: 10px; }
+  .has-map .nav-brand-section { gap: 9px; }
+  .has-map .nav-logo-icon { width: 32px; height: 32px; border-radius: 10px; }
+  .has-map .nav-logo-icon svg { width: 19px; height: 19px; }
+  .has-map .nav-title { font-size: 16px; }
+  .has-map .nav-subtitle { font-size: 10px; }
+  .has-map .nav-center-search { width: 280px; }
+  .has-map .app-navbar .search-input { min-height: 34px; height: 34px; padding-block: 6px; font-size: 12px; }
+  .has-map .app-navbar .btn-nav-glass, .has-map .app-navbar .btn-nav-primary { min-height: 34px; padding: 6px 10px; font-size: 11px; border-radius: 10px; }
+  .has-map .family-explorer-toolbar { top: 62px; left: 16px; right: 16px; gap: 12px; }
+  .has-map .family-explorer-heart, .has-map .family-explorer-welcome p { display: none; }
+  .has-map .family-explorer-welcome strong { font-size: 13px; }
+  .has-map .family-explorer-actions { gap: 6px; }
+  .has-map .family-explorer-actions button { min-height: 30px; padding: 4px 10px; font-size: 11px; border-radius: 10px; gap: 5px; }
+  .has-map .family-explorer-actions button svg { width: 15px; height: 15px; }
+  .has-map .family-explorer-actions .explorer-help { width: 30px; padding: 0; }
+  .app-container.has-map .map-canvas-container { top: 100px; bottom: 64px; }
+  .has-map .map-context { top: 8px; left: 12px; right: auto; width: fit-content; max-width: calc(100% - 24px); padding: 2px 10px; gap: 20px; border-radius: 10px; font-size: 12px; }
+  .has-map .map-context button { min-height: 30px; }
+  .has-map .floating-controls-panel.map-controls { bottom: 10px; left: 12px; flex-direction: row; align-items: center; gap: 12px; }
+  .has-map .map-control-actions { order: 0; gap: 6px; }
+  .has-map .map-control-status { order: 1; min-height: 32px; padding-left: 12px; border-left: 1px solid #e3d2c0; gap: 3px; font-size: 10px; }
+  .has-map .map-control-status strong { font-size: 11px; }
+  .has-map .map-controls .control-btn-group { padding: 2px; border-radius: 12px; }
+  .has-map .map-controls .control-icon-btn { min-width: 38px; min-height: 38px; width: 38px; height: 38px; border-radius: 9px; }
+  .has-map .map-controls .control-icon-btn svg { width: 17px; height: 17px; }
+  .has-map .map-controls .control-zoom-indicator { min-width: 36px; font-size: 11px; }
+  .has-map .map-action-button, .has-map .map-options summary { min-height: 44px; padding: 0 10px; border-radius: 12px; font-size: 11px; gap: 6px; }
+  .has-map .map-options summary { width: 42px; padding: 0; }
+  .has-map .map-action-button svg { width: 16px; height: 16px; }
+  .has-map .minimap-pill-btn { bottom: 10px; right: 12px; min-height: 40px; padding: 8px 12px; font-size: 11px; }
+  .has-map .minimap-panel { bottom: 66px; right: 12px; }
+  .has-map .map-legend-drawer.is-collapsed { bottom: 10px; right: 156px; min-height: 40px; padding: 8px 12px; }
+  .has-map .map-legend-drawer.is-open { bottom: 66px; right: 12px; }
+}
+@media (min-width: 769px) and (max-width: 1100px) {
+  .has-map .map-controls .map-reset-button { display: none; }
+  .has-map .map-legend-drawer.is-collapsed { bottom: 66px; right: 12px; }
+}

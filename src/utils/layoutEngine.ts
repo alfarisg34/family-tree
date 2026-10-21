@@ -6,6 +6,7 @@ import type {
   TreeLayout
 } from '../types/family';
 import { getGenerationLabel } from './dateUtils';
+import { getFamilyExpansion } from './zoomSpacing';
 
 const NODE_SIZE = 120;
 const HORIZONTAL_GAP = 140; // Space between different families/siblings
@@ -15,7 +16,7 @@ const VERTICAL_LEVEL_GAP = 280; // Vertical space between generations
 /**
  * Compute optimal coordinates for family tree nodes & edges
  */
-export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
+export function computeFamilyTreeLayout(familyData: FamilyData, options: { scale?: number } = {}): TreeLayout {
   const members = familyData.members;
   const memberList = Object.values(members);
 
@@ -245,7 +246,13 @@ export function computeFamilyTreeLayout(familyData: FamilyData): TreeLayout {
         ? (unit.spouses.length > 0 ? (NODE_SIZE * 2 + SPOUSE_GAP) : NODE_SIZE)
         : NODE_SIZE;
 
-      const segSubtreeW = Math.max(baseWidth, childrenTotalW);
+      const expansion = options.scale === undefined ? 1 : getFamilyExpansion(unit.generation, options.scale);
+      // A collapsed family reserves room for its card, rather than every hidden descendant.
+      // Descendants may occupy their full width only once their generation is revealed.
+      const expandedWidth = Math.max(baseWidth, childrenTotalW);
+      const collapsedWidth = Math.min(expandedWidth, assignedChildren.length > 0 ? Math.max(330, baseWidth) : baseWidth);
+      const segSubtreeW = options.scale === undefined ? Math.max(baseWidth, childrenTotalW)
+        : collapsedWidth + (expandedWidth - collapsedWidth) * expansion;
 
       segments.push({
         spouseIndex: sIdx,

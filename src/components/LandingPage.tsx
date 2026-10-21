@@ -1,8 +1,9 @@
 import { ArrowRight, GitGraph, Heart, Images, Map, Search, ShieldCheck, Users, ZoomIn } from 'lucide-react';
 import './LandingPage.css';
+import { LATEST_VERSION_LABEL } from '../data/changelog';
 
 const features = [
-  { icon: Map, title: 'Jelajahi silsilah secara interaktif', description: 'Geser peta, perbesar setiap cabang, dan gunakan minimap untuk melihat hubungan lintas generasi dengan mudah.' },
+  { icon: Map, title: 'Jelajahi silsilah secara interaktif', description: 'Geser peta, perbesar setiap keluarga, dan gunakan minimap untuk melihat hubungan lintas generasi dengan mudah.' },
   { icon: Search, title: 'Temukan anggota keluarga', description: 'Cari berdasarkan nama, nama panggilan, profesi, atau domisili. Langsung menuju anggota yang ingin Anda kenal.' },
   { icon: Images, title: 'Simpan cerita dan kenangan', description: 'Kenali setiap anggota melalui profil, kisah hidup, pendidikan, pekerjaan, dan galeri foto yang dapat diperbesar.' },
   { icon: Heart, title: 'Pahami setiap hubungan', description: 'Lihat hubungan orang tua, anak, pasangan, dan saudara, lengkap dengan penanda anak angkat, perceraian, dan anggota yang telah wafat.' },
@@ -83,7 +84,14 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="landing-footer landing-shell"><span><GitGraph size={17} /> Silsilah Keluarga</span><p>Merawat hubungan. Menyimpan kenangan.</p><a href="#landing-title">Kembali ke atas ↑</a></footer>
+      <footer className="landing-footer landing-shell">
+        <span><GitGraph size={17} /> Silsilah Keluarga</span>
+        <p>Merawat hubungan. Menyimpan kenangan.</p>
+        <div className="landing-footer-links">
+          <a href="/changelog" aria-label={`Catatan rilis ${LATEST_VERSION_LABEL}`}>Catatan rilis <span className="landing-version">{LATEST_VERSION_LABEL}</span></a>
+          <a href="#landing-title">Kembali ke atas ↑</a>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -689,6 +689,16 @@ body {
   }
 }
 
+/* Keep a continuous pointer path across the visual gap above the preview. */
+.cluster-hover-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: 0;
+  right: 0;
+  height: 14px;
+}
+
 .cluster-tooltip-header {
   display: flex;
   align-items: center;
@@ -724,6 +734,7 @@ body {
   gap: 6px;
   max-height: 160px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .cluster-tooltip-member-item {
