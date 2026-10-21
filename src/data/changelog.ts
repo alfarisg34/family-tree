@@ -11,6 +11,19 @@ export interface ReleaseEntry {
 
 // New releases go first. The homepage and release page share this version source.
 export const CHANGELOG_DATA: ReleaseEntry[] = [{
+  version: '0.2.0',
+  date: '2026-10-21',
+  type: 'MINOR',
+  title: 'Pengelolaan keluarga dan navigasi admin',
+  summary: 'Hapus keluarga secara permanen, gunakan alamat admin yang lebih teratur, dan kembali ke dashboard dari halaman silsilah.',
+  changes: [
+    { category: 'FITUR', title: 'Hapus permanen keluarga', description: 'Tombol sampah pada daftar keluarga meminta konfirmasi sebelum menghapus keluarga beserta seluruh anggota dan hubungannya. Operasi memerlukan sesi admin; cache perangkat dibersihkan setelah server berhasil.' },
+    { category: 'UI/UX', title: 'Alamat admin terpusat', description: 'Dashboard berada di /admin/dashboard dan pengelolaan di /admin/manage. Alamat lama mengarahkan admin yang sudah login ke alamat baru; login tetap di /admin/login.' },
+    { category: 'UI/UX', title: 'Dashboard lebih ringkas', description: 'Dashboard menampilkan ringkasan statistik. Daftar dan tindakan keluarga tersedia pada halaman Kelola keluarga.' },
+    { category: 'UI/UX', title: 'Kembali dari silsilah', description: 'Tombol Dashboard admin pada navigasi halaman keluarga membawa admin kembali ke dashboard. Di ponsel tombol menggunakan ikon dasbor.' },
+    { category: 'DOKUMENTASI', title: 'Panduan admin dan kontrak penghapusan', description: 'Dokumen produk, desain, arsitektur, skema API, dan panduan diperbarui. Aset foto belum ikut dihapus karena tidak memiliki kepemilikan per keluarga.' },
+  ],
+}, {
   version: '0.1.0',
   date: '2026-10-21',
   type: 'MINOR',

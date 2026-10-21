@@ -42,11 +42,15 @@ Middleware Vite menjalankan `/api/data` di komputer lokal. `npm run preview` jug
 | `/` | Pengenalan aplikasi; tidak menampilkan daftar atau tautan keluarga tertentu. |
 | `/changelog` | Catatan rilis publik; tautan dan versi tersedia pada footer beranda. |
 | `/admin/login` | Login menggunakan `ADMIN_PASSWORD`, tanpa username. |
-| `/admin` | Dashboard; dialihkan ke login jika sesi belum tersedia. |
-| `/manage` | Tambah keluarga, ubah informasi keluarga, tambah/edit anggota, salin tautan. Memerlukan login. |
+| `/admin/dashboard` | Dashboard; dialihkan ke login jika sesi belum tersedia. |
+| `/admin/manage` | Tambah keluarga, ubah informasi keluarga, tambah/edit anggota, salin tautan, hapus permanen keluarga dengan konfirmasi. Memerlukan login. |
 | `/<slug-keluarga>` | Peta keluarga yang dapat dibuka oleh penerima tautan dari admin. |
 
 Kata sandi lama tidak lagi diperiksa di frontend. Kata sandi aktif adalah nilai `ADMIN_PASSWORD` pada server. Sesi berlaku 12 jam. Login pada browser yang sudah digunakan akan diverifikasi kembali oleh server.
+
+Admin yang sudah login dialihkan dari `/admin` ke `/admin/dashboard` dan `/manage` ke `/admin/manage`. Tombol Dashboard admin pada navbar silsilah kembali ke dashboard. Tabel keluarga tersedia di halaman pengelolaan.
+
+Penghapusan permanen menghapus keluarga beserta seluruh anggota dan hubungan, lalu membersihkan cache pada perangkat ini setelah server berhasil. Aset foto tersimpan terpisah dan belum ikut dihapus; cache perangkat lain belum disinkronkan.
 
 ## Migrasi dari Supabase
 

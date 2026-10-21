@@ -38,6 +38,10 @@ export async function deleteMember(id: string, treeId?: string): Promise<boolean
   catch (error) { console.error('Gagal menghapus anggota:', error); return false; }
 }
 
+export async function deleteFamilyTree(slug: string): Promise<void> {
+  await apiRequest('tree', { method: 'DELETE' }, { slug });
+}
+
 export async function uploadImage(data: string | File | Blob, _folder?: 'avatars' | 'gallery', _filename?: string): Promise<string> {
   if (typeof data === 'string' && (data.startsWith('http') || data.startsWith('/api/'))) return data;
   const dataUrl = typeof data === 'string' ? data : await new Promise<string>((resolve, reject) => {

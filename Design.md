@@ -1,6 +1,6 @@
 # Desain Antarmuka — Silsilah Keluarga
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.1.0`.
+Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0`.
 Dokumen ini menjelaskan desain yang diimplementasikan pada workspace saat ini. Kebutuhan produk dijelaskan di [PRD.md](PRD.md).
 
 ## 1. Prinsip desain
@@ -16,9 +16,10 @@ Dokumen ini menjelaskan desain yang diimplementasikan pada workspace saat ini. K
 ```mermaid
 flowchart TD
   L[Landing /] --> A[Login admin]
-  A --> D[Dashboard /admin]
-  D --> M[Pengelolaan /manage]
+  A --> D[Dashboard /admin/dashboard]
+  D --> M[Pengelolaan /admin/manage]
   M --> T[Tautan keluarga /slug]
+  T -->|Tombol Dashboard admin bagi admin| D
   T --> P[Peta seluruh keluarga 85%]
   P --> O[Overview keluarga]
   O --> S[Ringkasan keluarga]
@@ -36,6 +37,8 @@ Keluarga dipilih melalui URL; overview adalah mode di dalam halaman keluarga, bu
 Footer beranda menampilkan tautan “Catatan rilis” dan badge versi monospace tanpa pemenggalan. Halaman publik `/changelog` menggunakan tema yang sama dengan beranda, tautan kembali, serta timeline kartu rilis berisi versi, tanggal, penanda terbaru, dan kategori perubahan. Tidak ada footer versi tambahan pada halaman keluarga, admin, atau changelog.
 
 ## 3. Sistem visual
+
+Dashboard admin menampilkan kartu statistik; tabel keluarga hanya muncul di `/admin/manage`. Kolom aksi memuat Kelola, salin tautan, buka silsilah, dan ikon sampah merah. Tombol sampah memakai nama aksesibel sesuai keluarga, konfirmasi browser yang menyatakan penghapusan permanen, status berhasil/gagal, serta dinonaktifkan selama penghapusan. Navbar silsilah menyediakan tombol Dashboard admin untuk sesi admin, dengan label desktop dan ikon dasbor pada mobile.
 
 Token utama berada di `src/index.css`; override tema dan desktop di `src/warm-theme.css`.
 

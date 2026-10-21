@@ -7,8 +7,9 @@ let ready = false;
 let refreshing: Promise<void> | null = null;
 
 export function getAdminRedirect(path: string, isAdmin: boolean): string | null {
-  if (!isAdmin && ['admin', 'manage'].includes(path)) return '/admin/login';
-  if (isAdmin && path === 'admin/login') return '/admin';
+  if (!isAdmin && ['admin', 'manage', 'admin/dashboard', 'admin/manage'].includes(path)) return '/admin/login';
+  if (isAdmin && ['admin', 'admin/login'].includes(path)) return '/admin/dashboard';
+  if (isAdmin && path === 'manage') return '/admin/manage';
   return null;
 }
 

@@ -1007,6 +1007,10 @@ body {
   border-color: rgba(123, 88, 61, 0.25);
 }
 
+.nav-admin-dashboard {
+  text-decoration: none;
+}
+
 .btn-nav-primary {
   background: linear-gradient(135deg, #b95f3c, #a34e31);
   border: none;

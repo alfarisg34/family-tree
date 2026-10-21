@@ -1,7 +1,7 @@
 # Product Requirements Document — Silsilah Keluarga
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.1.0` sesuai `package.json`.
-Status: dokumentasi implementasi rilis v0.1.0.
+Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0` sesuai `package.json`.
+Status: dokumentasi implementasi rilis v0.2.0.
 
 ## 1. Ringkasan produk
 
@@ -37,10 +37,11 @@ Tidak ada akun anggota, undangan individual, peran admin per keluarga, atau pers
 ### Admin
 
 1. Masuk di `/admin/login` menggunakan kata sandi server.
-2. Membuka dashboard `/admin` dan pengelolaan `/manage`.
+2. Membuka dashboard `/admin/dashboard` dan pengelolaan `/admin/manage`.
 3. Membuat keluarga dengan nama dan slug, memperbarui metadata dan anggota.
 4. Mengatur orang tua, pasangan, urutan anak, foto profil, galeri, dan tag anggota.
 5. Menyalin tautan keluarga untuk dibagikan.
+6. Kembali dari silsilah melalui tombol Dashboard admin; menghapus keluarga di halaman pengelolaan setelah konfirmasi permanen.
 
 ## 4. Kebutuhan fungsional
 
@@ -65,6 +66,9 @@ Tidak ada akun anggota, undangan individual, peran admin per keluarga, atau pers
 | REQ-PHT-02 | Tag tampilan memuat pemilik foto dan peserta yang dikenal, kecuali anggota yang profilnya sedang dibuka. Penyusunan tag tidak mengubah galeri tersimpan. |
 | REQ-PHT-03 | Admin dapat crop/optimasi gambar dan upload JPEG, PNG, WebP, atau GIF melalui API. |
 | REQ-ADM-01 | Admin dapat membuat keluarga, mengubah metadata, menambah/mengubah/menghapus anggota, dan menyusun urutan anak. |
+| REQ-ADM-02 | `/admin/dashboard` menampilkan statistik; daftar keluarga dan tindakannya hanya ada di `/admin/manage`. Login tetap `/admin/login`; URL lama mengalihkan admin yang sudah login ke URL baru. |
+| REQ-ADM-03 | Tombol sampah meminta konfirmasi sebelum menghapus keluarga beserta seluruh anggota dan hubungan melalui API admin. Cache lokal dan editor keluarga dibersihkan setelah server berhasil; kegagalan menampilkan pesan dan mempertahankan daftar. |
+| REQ-ADM-04 | Navbar keluarga menampilkan tombol Dashboard admin hanya bagi admin yang login; tautannya `/admin/dashboard`, dengan ikon pada mobile. |
 | REQ-REL-01 | Jenis hubungan orang tua: biological/adopted/foster/step; status pasangan: married/divorced/separated/widowed. Perubahan pasangan disinkronkan dua arah oleh klien. |
 | REQ-DAT-01 | Neon menjadi penyimpanan remote; cache localStorage per slug mempercepat tampilan awal dan menjadi fallback. |
 | REQ-AUT-01 | Semua operasi tulis dan katalog seluruh keluarga memerlukan sesi admin yang diverifikasi server. Sesi bertahan 12 jam. |

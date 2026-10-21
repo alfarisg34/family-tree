@@ -1,6 +1,6 @@
 # Skema Data dan Kontrak API
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.1.0`.
+Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0`.
 Sumber utama: `server/database.mjs`, `src/types/family.ts`, dan `api/data.mjs`.
 
 ## 1. Penyimpanan aktif
@@ -137,7 +137,7 @@ Contoh sintetis, bukan salinan data keluarga:
 - `writeTree` meng-upsert metadata berdasarkan slug dan anggota berdasarkan primary key dalam transaksi. Anggota lama yang tidak ada pada kiriman tidak dihapus.
 - `writeMember` meng-upsert satu payload dan memperbarui timestamp keluarga dalam transaksi.
 - `removeMember` menghapus record, membersihkan referensi orang tua/pasangan dalam keluarga yang sama, dan memperbarui timestamp dalam transaksi. Referensi tag foto dan aset tidak dibersihkan otomatis.
-- Aset tidak memiliki `tree_id`; penghapusan keluarga pada tingkat database hanya mencascade anggota, bukan aset. Tidak ada endpoint penghapusan keluarga/aset pada API saat ini.
+- `removeTree` menghapus keluarga berdasarkan slug melalui SQL terparameter; FK mencascade seluruh anggota. Operasi idempoten. Aset tidak memiliki `tree_id` dan tidak ikut dihapus; belum ada endpoint penghapusan aset.
 
 ## 6. Kontrak HTTP
 
@@ -152,6 +152,7 @@ Endpoint tunggal: `/api/data?action=<action>`. Fetch browser memakai credentials
 | GET `trees` | Admin | — | Array `{ id, slug, tree_name }` |
 | GET `tree` | Publik | Query `slug` | `FamilyData` |
 | POST `tree` | Admin | Body `FamilyData` dengan slug | `{ success: true, treeId, message }` |
+| DELETE `tree` | Admin | Query `slug` valid; keluarga dan anggota dihapus permanen | `{ success: true }`, termasuk bila slug sudah tidak ada |
 | POST `member` | Admin | `{ member, treeId }` | `{ success: true }` |
 | DELETE `member` | Admin | Query `id`, `treeId` | `{ success: true }` |
 | POST `asset` | Admin | `{ dataUrl }` | `{ url: "/api/data?action=asset&id=..." }` |

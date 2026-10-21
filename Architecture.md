@@ -1,7 +1,7 @@
 # Arsitektur Sistem — Silsilah Keluarga
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.1.0`.
-Status: dokumentasi implementasi rilis v0.1.0. Kebutuhan: [PRD.md](PRD.md); kontrak data/API: [Schema.md](Schema.md); antarmuka: [Design.md](Design.md).
+Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0`.
+Status: dokumentasi implementasi rilis v0.2.0. Kebutuhan: [PRD.md](PRD.md); kontrak data/API: [Schema.md](Schema.md); antarmuka: [Design.md](Design.md).
 
 ## 1. Gambaran sistem
 
@@ -68,6 +68,7 @@ src/
 scripts/                        Setup, migrasi, verifikasi dan pembacaan env
 tests/*.test.mjs                Unit dan pengujian API dengan dependency injection
 tests/browser/family.spec.mjs   Regresi UI Playwright
+tests/browser/admin-delete.spec.mjs  Pembatalan, keberhasilan dan kegagalan hapus keluarga
 public/                         Aset statis
 supabase_schema.sql             Skema sumber historis, bukan DDL Neon aktif
 vite.config.ts                  Middleware API dev/preview
@@ -77,7 +78,7 @@ PRD.md / Design.md / Schema.md / Architecture.md / CHANGELOG.md
 
 ## 3. Routing dan state aplikasi
 
-`App.tsx` membaca pathname, menggunakan History API, dan mendengarkan `popstate`. `/` menampilkan landing; `/admin`, `/admin/login`, dan `/manage` memakai `AdminArea`; path lain diperlakukan sebagai slug keluarga. Mengubah keluarga me-remount `FamilyTreeApp` melalui key slug.
+`App.tsx` membaca pathname, menggunakan History API, dan mendengarkan `popstate`. `/` menampilkan landing; `/admin/dashboard`, `/admin/login`, dan `/admin/manage` memakai `AdminArea`; path lain diperlakukan sebagai slug keluarga. Mengubah keluarga me-remount `FamilyTreeApp` melalui key slug.
 
 Pengecualian route publik `/changelog` dirender sebelum pemrosesan keluarga. Halaman ini menggunakan data statis `src/data/changelog.ts`, tanpa koneksi database. Footer versi hanya ada di beranda. `changelog` dicadangkan dalam validasi slug klien/server untuk mencegah benturan alamat keluarga. Release gate memeriksa keselarasan versi UI, package, lockfile, dan dokumentasi melalui `tests/release.test.mjs`.
 
@@ -119,6 +120,12 @@ Penulisan pohon meng-upsert metadata dan payload anggota dalam transaksi; penuli
 POST sesi membandingkan password terhadap `ADMIN_PASSWORD` dengan `timingSafeEqual`, lalu mengirim cookie bertanda tangan HMAC. Setiap request tulis dan GET katalog memverifikasi cookie server. Sesi di browser diverifikasi kembali lewat GET sesi. Origin pada request non-GET diperiksa jika header tersedia.
 
 Pengunjung tetap dapat membaca keluarga dan aset tanpa sesi. Satu admin memiliki akses seluruh keluarga; belum ada tenant authorization, MFA, rate limiting login, atau audit log. Logout menghapus cookie browser, bukan mencabut token yang pernah disalin. Rotasi secret memutus validitas seluruh signature lama.
+
+Admin yang sudah login dialihkan dari `/admin` dan `/admin/login` ke `/admin/dashboard`, serta dari `/manage` ke `/admin/manage`. Kedua rute baru memerlukan login. Navbar silsilah menampilkan tautan Dashboard admin bagi sesi admin; tabel keluarga hanya dirender pada halaman pengelolaan.
+
+### 4.3.1 Penghapusan permanen keluarga
+
+Setelah konfirmasi browser, `AdminArea` memanggil `deleteFamilyTree` melalui DELETE `/api/data?action=tree&slug=...`. Server memeriksa sesi, Origin bila tersedia, dan validitas slug. `removeTree` menjalankan DELETE terparameter pada `family_trees`; FK `ON DELETE CASCADE` menghapus seluruh anggota keluarga tersebut. Operasi bersifat idempoten, termasuk keluarga yang hanya tersimpan lokal. Setelah respons berhasil, klien menghapus cache slug, menutup editor terkait, dan memperbarui daftar. Jika server gagal, cache dan daftar tetap tersedia. Aset foto tidak memiliki `tree_id` sehingga tidak ikut dihapus. Cache pada perangkat lain dan konflik multi-editor belum disinkronkan.
 
 ### 4.4 Kinerja, cache, dan batasnya
 

@@ -116,7 +116,7 @@ test('landing and login use the warm theme without exposing family links', async
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 249, 241)');
   await expect(page.locator('a[href^="/keluarga"]')).toHaveCount(0);
   await page.screenshot({ animations: 'disabled', path: 'test-results/landing-desktop.png', fullPage: true });
-  await page.goto('/admin');
+  await page.goto('/admin/dashboard');
   await expect(page).toHaveURL(/\/admin\/login$/);
   await expect(page.getByRole('heading', { name: 'Masuk admin' })).toBeVisible();
   await page.screenshot({ animations: 'disabled', path: 'test-results/login-desktop.png' });
@@ -182,16 +182,22 @@ test('mobile controls, member list, and help remain usable without horizontal ov
 
 test('admin dashboard, management and forms share the light palette', async ({ page }) => {
   await mockApi(page, true);
-  await page.goto('/admin');
+  await page.goto('/admin/dashboard');
   await expect(page.getByRole('heading', { name: 'Dashboard keluarga' })).toBeVisible();
   await page.screenshot({ animations: 'disabled', path: 'test-results/admin-desktop.png', fullPage: true });
   await page.getByRole('link', { name: 'Kelola keluarga' }).click();
+  await expect(page).toHaveURL(/\/admin\/manage$/);
   await page.getByRole('button', { name: 'Kelola', exact: true }).click();
   await page.getByRole('button', { name: 'Tambah anggota', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Tambah anggota keluarga' })).toBeVisible();
   await page.screenshot({ animations: 'disabled', path: 'test-results/member-form-desktop.png' });
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Tambah anggota keluarga' })).toHaveCount(0);
+  await page.goto('/keluarga-contoh');
+  await page.getByRole('link', { name: 'Kembali ke dashboard admin', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/dashboard$/);
+  await expect(page.getByRole('heading', { name: 'Dashboard keluarga' })).toBeVisible();
+  await expect(page.locator('.admin-table')).toHaveCount(0);
 });
 
 test('small phones keep navigation controls separate', async ({ page }) => {

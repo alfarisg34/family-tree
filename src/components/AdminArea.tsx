@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { GitGraph, LayoutDashboard, Users, Images, LogOut, Plus, Pencil, ExternalLink, Link, Settings, Search } from 'lucide-react';
+import { GitGraph, LayoutDashboard, Users, Images, LogOut, Plus, Pencil, ExternalLink, Link, Settings, Search, Trash2 } from 'lucide-react';
 import { getAdminRedirect, useAdminSession } from '../hooks/useAdminSession';
 import { useFamilyData } from '../hooks/useFamilyData';
 import { loadFamilyCatalog } from '../utils/familyCatalog';
 import { isDatabaseConfigured } from '../services/databaseService';
-import { syncEntireTree } from '../services/databaseService';
+import { syncEntireTree, deleteFamilyTree } from '../services/databaseService';
 import { updateFamilyMembers } from '../utils/updateFamilyMembers';
 import type { FamilyData, FamilyMember } from '../types/family';
 import { MemberFormModal } from './MemberFormModal';
@@ -32,6 +32,7 @@ export function AdminArea({ path, onNavigate }: AdminAreaProps) {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [deletingSlug, setDeletingSlug] = useState('');
 
   useEffect(() => {
     if (!isSessionReady) return;
@@ -56,7 +57,7 @@ export function AdminArea({ path, onNavigate }: AdminAreaProps) {
     event.preventDefault();
     setLoggingIn(true);
     if (!await loginAdmin(password)) setLoginError('Login gagal. Periksa kata sandi dan koneksi server.');
-    else { setPassword(''); onNavigate('/admin', true); }
+    else { setPassword(''); onNavigate('/admin/dashboard', true); }
     setLoggingIn(false);
   };
 
@@ -82,6 +83,22 @@ export function AdminArea({ path, onNavigate }: AdminAreaProps) {
       setCreating(false); setFamilyName(''); setSlug(''); setSelectedSlug(cleanSlug); setNotice('Keluarga berhasil ditambahkan.'); refresh();
     } catch (cause) { setNotice(cause instanceof Error ? cause.message : 'Gagal menyimpan keluarga.'); }
     finally { setSaving(false); }
+  };
+
+  const deleteFamily = async (family: FamilyData) => {
+    if (!family.slug || deletingSlug) return;
+    if (!window.confirm(`Hapus permanen "${family.familyTreeName}" beserta seluruh anggota dan hubungan keluarganya? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setDeletingSlug(family.slug);
+    setNotice('');
+    try {
+      await deleteFamilyTree(family.slug);
+      localStorage.removeItem(`family_tree_data_${family.slug}`);
+      if (selectedSlug === family.slug) setSelectedSlug('');
+      setFamilies((current) => current.filter((item) => item.slug !== family.slug));
+      setNotice(`Keluarga "${family.familyTreeName}" berhasil dihapus permanen.`);
+    } catch (cause) {
+      setNotice(`Keluarga belum dihapus: ${cause instanceof Error ? cause.message : 'Silakan coba lagi.'}`);
+    } finally { setDeletingSlug(''); }
   };
 
   const copyLink = async (familySlug: string) => {
@@ -113,30 +130,30 @@ export function AdminArea({ path, onNavigate }: AdminAreaProps) {
       <header className="admin-header">
         <a href="/" className="admin-brand"><GitGraph size={23} /> Silsilah Keluarga <span>Admin</span></a>
         <nav aria-label="Navigasi admin">
-          <a href="/admin" aria-current={path === 'admin' ? 'page' : undefined} onClick={(event) => { event.preventDefault(); onNavigate('/admin'); }}><LayoutDashboard size={16} /> Dashboard</a>
-          <a href="/manage" aria-current={path === 'manage' ? 'page' : undefined} onClick={(event) => { event.preventDefault(); onNavigate('/manage'); }}><Settings size={16} /> Kelola keluarga</a>
+          <a href="/admin/dashboard" aria-current={path === 'admin/dashboard' ? 'page' : undefined} onClick={(event) => { event.preventDefault(); onNavigate('/admin/dashboard'); }}><LayoutDashboard size={16} /> Dashboard</a>
+          <a href="/admin/manage" aria-current={path === 'admin/manage' ? 'page' : undefined} onClick={(event) => { event.preventDefault(); onNavigate('/admin/manage'); }}><Settings size={16} /> Kelola keluarga</a>
           <button className="btn-nav-glass" onClick={() => { void logoutAdmin().catch(() => setNotice('Logout gagal. Silakan coba lagi.')); }}><LogOut size={16} /> Keluar</button>
         </nav>
       </header>
       <main className="admin-content">
-        <div className="admin-heading"><div><p className="admin-eyebrow">Ruang admin</p><h1>{path === 'manage' ? 'Kelola keluarga' : 'Dashboard keluarga'}</h1><p>{path === 'manage' ? 'Atur informasi keluarga, tambah anggota, dan bagikan tautan silsilah.' : 'Ringkasan data silsilah keluarga yang tersedia di aplikasi.'}</p></div><button className="btn-nav-glass" onClick={refresh} disabled={loading}>Muat ulang</button></div>
+        <div className="admin-heading"><div><p className="admin-eyebrow">Ruang admin</p><h1>{path === 'admin/manage' ? 'Kelola keluarga' : 'Dashboard keluarga'}</h1><p>{path === 'admin/manage' ? 'Atur informasi keluarga, tambah anggota, dan bagikan tautan silsilah.' : 'Ringkasan data silsilah keluarga yang tersedia di aplikasi.'}</p></div><button className="btn-nav-glass" onClick={refresh} disabled={loading || !!deletingSlug}>Muat ulang</button></div>
         {notice && <p className="admin-notice" role="status">{notice}</p>}
         {error && <p className="admin-error" role="alert">{error}</p>}
         {loading && <p role="status">Memuat data keluarga…</p>}
-        {!loading && path === 'admin' && <>
+        {!loading && path === 'admin/dashboard' && <>
           <div className="admin-stats">
             {[{ icon: GitGraph, label: 'Keluarga', value: families.length }, { icon: Users, label: 'Anggota', value: members.length }, { icon: Images, label: 'Foto galeri', value: members.reduce((total, member) => total + (member.gallery?.length || 0), 0) }, { icon: Users, label: 'Anggota hidup', value: members.filter((member) => !member.isDeceased).length }].map(({ icon: Icon, label, value }) => <article key={label}><Icon size={22} /><strong>{value}</strong><span>{label}</span></article>)}
           </div>
           <p className="admin-data-note">Ringkasan menampilkan keluarga yang tersimpan di Neon dan data pada perangkat ini.</p>
         </>}
-        {path === 'manage' && <div className="admin-toolbar"><h2>Daftar keluarga</h2><button className="btn-nav-primary" onClick={() => { setCreating(!creating); setNotice(''); }}><Plus size={16} /> Tambah keluarga</button></div>}
-        {path === 'manage' && creating && <form className="admin-panel admin-create-form" onSubmit={createFamily}>
+        {path === 'admin/manage' && <div className="admin-toolbar"><h2>Daftar keluarga</h2><button className="btn-nav-primary" onClick={() => { setCreating(!creating); setNotice(''); }}><Plus size={16} /> Tambah keluarga</button></div>}
+        {path === 'admin/manage' && creating && <form className="admin-panel admin-create-form" onSubmit={createFamily}>
           <div className="form-group"><label className="form-label" htmlFor="family-name">Nama keluarga</label><input id="family-name" className="form-input" required value={familyName} onChange={(event) => setFamilyName(event.target.value)} placeholder="Keluarga Besar Abdullah" /></div>
           <div className="form-group"><label className="form-label" htmlFor="family-slug">Alamat tautan keluarga</label><input id="family-slug" className="form-input" required value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="keluarga-abdullah" /><small>Alamat ini digunakan untuk tautan yang dibagikan kepada keluarga.</small></div>
           <button className="btn-nav-primary" type="submit" disabled={saving || loading}>{saving ? 'Menyimpan…' : 'Simpan keluarga'}</button>
         </form>}
-        {!loading && <div className="admin-panel admin-table-scroll"><table className="admin-table"><thead><tr><th>Keluarga</th><th>Anggota</th><th>Generasi</th><th>Aksi</th></tr></thead><tbody>{families.map((family) => <tr key={family.slug}><td><strong>{family.familyTreeName}</strong><small>/{family.slug}</small></td><td>{Object.keys(family.members).length}</td><td>{new Set(Object.values(family.members).map((member) => member.generation)).size}</td><td><div className="admin-row-actions"><button className="btn-nav-glass" onClick={() => { setSelectedSlug(family.slug!); if (path !== 'manage') onNavigate('/manage'); }}><Pencil size={14} /> Kelola</button><button className="btn-nav-glass" onClick={() => copyLink(family.slug!)} aria-label={`Salin tautan ${family.familyTreeName}`}><Link size={14} /></button><a className="btn-nav-glass" href={`/${family.slug}`} aria-label={`Buka ${family.familyTreeName}`}><ExternalLink size={14} /></a></div></td></tr>)}</tbody></table>{families.length === 0 && <p>Belum ada keluarga. Tambahkan keluarga untuk memulai.</p>}</div>}
-        {path === 'manage' && selectedSlug && <FamilyEditor key={selectedSlug} slug={selectedSlug} onChanged={refresh} />}
+        {!loading && path === 'admin/manage' && <div className="admin-panel admin-table-scroll"><table className="admin-table"><thead><tr><th>Keluarga</th><th>Anggota</th><th>Generasi</th><th>Aksi</th></tr></thead><tbody>{families.map((family) => <tr key={family.slug}><td><strong>{family.familyTreeName}</strong><small>/{family.slug}</small></td><td>{Object.keys(family.members).length}</td><td>{new Set(Object.values(family.members).map((member) => member.generation)).size}</td><td><div className="admin-row-actions"><button className="btn-nav-glass" onClick={() => { setSelectedSlug(family.slug!); if (path !== 'admin/manage') onNavigate('/admin/manage'); }}><Pencil size={14} /> Kelola</button><button className="btn-nav-glass" onClick={() => copyLink(family.slug!)} aria-label={`Salin tautan ${family.familyTreeName}`}><Link size={14} /></button><a className="btn-nav-glass" href={`/${family.slug}`} aria-label={`Buka ${family.familyTreeName}`}><ExternalLink size={14} /></a><button className="btn-nav-glass admin-delete-button" disabled={!!deletingSlug} onClick={() => { void deleteFamily(family); }} aria-label={`Hapus permanen ${family.familyTreeName}`} title="Hapus permanen keluarga"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table>{families.length === 0 && <p>Belum ada keluarga. Tambahkan keluarga untuk memulai.</p>}</div>}
+        {path === 'admin/manage' && selectedSlug && deletingSlug !== selectedSlug && <FamilyEditor key={selectedSlug} slug={selectedSlug} onChanged={refresh} />}
       </main>
     </div>
   );

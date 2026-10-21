@@ -39,6 +39,12 @@ export async function listTrees(sql = database()) {
   return sql`SELECT id, slug, tree_name FROM family_trees ORDER BY tree_name`;
 }
 
+export async function removeTree(slug, sql = database()) {
+  if (!validSlug(slug)) throw new Error('Alamat keluarga tidak valid.');
+  // The foreign key removes all members of this tree with ON DELETE CASCADE.
+  await sql`DELETE FROM family_trees WHERE slug = ${slug}`;
+}
+
 export async function readTree(slug, sql = database()) {
   const rows = await sql`SELECT t.*, COALESCE(jsonb_object_agg(m.id, m.payload) FILTER (WHERE m.id IS NOT NULL), '{}'::jsonb) AS members
     FROM family_trees t LEFT JOIN family_members m ON m.tree_id = t.id WHERE t.slug = ${slug} GROUP BY t.id`;

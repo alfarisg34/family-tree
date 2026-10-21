@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { createHandler } from '../api/data.mjs';
 import { hasSession, sessionCookie } from '../server/session.mjs';
-import { validSlug } from '../server/database.mjs';
+import { validSlug, removeTree } from '../server/database.mjs';
 import { convertMember } from '../scripts/migrate-to-neon.mjs';
 
 beforeEach(() => {
@@ -18,7 +18,7 @@ async function call(req, repository = {}) {
 function adminCookie() { return sessionCookie({ headers: {} }).split(';')[0]; }
 
 test('database writes and family listing require a server session', async () => {
-  for (const [action, method] of [['tree', 'POST'], ['member', 'POST'], ['member', 'DELETE'], ['asset', 'POST'], ['trees', 'GET']]) {
+  for (const [action, method] of [['tree', 'POST'], ['tree', 'DELETE'], ['member', 'POST'], ['member', 'DELETE'], ['asset', 'POST'], ['trees', 'GET']]) {
     const response = await call(request(action, method));
     assert.equal(response.statusCode, 401);
   }
@@ -69,6 +69,37 @@ test('server errors do not expose database credentials', async () => {
   const response = await call(request('trees', 'GET', {}, adminCookie()), { listTrees: async () => { throw new Error('postgresql://user:secret@db'); } });
   assert.equal(response.statusCode, 500);
   assert.doesNotMatch(JSON.stringify(response.body), /secret|postgresql/);
+});
+
+test('admin deletion targets only the requested family and validates the slug', async () => {
+  const deleted = [];
+  const repository = { removeTree: async (slug) => { deleted.push(slug); } };
+  const response = await call(request('tree&slug=known-family', 'DELETE', {}, adminCookie()), repository);
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body, { success: true });
+  for (const slug of ['', 'admin', 'invalid/slug']) {
+    assert.equal((await call(request(`tree&slug=${slug}`, 'DELETE', {}, adminCookie()), repository)).statusCode, 400);
+  }
+  assert.deepEqual(deleted, ['known-family']);
+});
+
+test('failed deletion returns an error instead of reporting success', async () => {
+  const response = await call(request('tree&slug=known-family', 'DELETE', {}, adminCookie()), {
+    removeTree: async () => { throw new Error('Database unavailable'); },
+  });
+  assert.equal(response.statusCode, 500);
+  assert.equal(response.body.success, undefined);
+});
+
+test('repository permanently deletes the specified tree using a parameterized query', async () => {
+  let queried = false;
+  await removeTree('known-family', async (strings, ...values) => {
+    queried = true;
+    assert.match(strings.join('?'), /DELETE FROM family_trees WHERE slug = \?/);
+    assert.deepEqual(values, ['known-family']);
+    return [];
+  });
+  assert.equal(queried, true);
 });
 
 test('Supabase migration preserves dates, relationships, galleries and structured titles', () => {

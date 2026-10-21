@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Plus,
   ArrowLeft,
+  LayoutDashboard,
   Settings,
   X
 } from 'lucide-react';
@@ -485,6 +486,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {isAdmin ? (
               <>
+                <a
+                  className="btn-nav-glass nav-admin-dashboard"
+                  href="/admin/dashboard"
+                  aria-label="Kembali ke dashboard admin"
+                  title="Kembali ke dashboard admin"
+                >
+                  <LayoutDashboard size={15} />
+                  <span className="btn-label-desktop">Dashboard admin</span>
+                </a>
                 {onOpenTreeSettings && (
                   <button
                     className="btn-nav-glass"

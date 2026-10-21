@@ -2,9 +2,29 @@
 
 Catatan perubahan Silsilah Keluarga. Tanggal acuan dokumentasi: 21 Oktober 2026.
 
-Versi aplikasi: `0.1.0`. Catatan rilis publik tersedia di `/changelog` dengan data pada `src/data/changelog.ts`. Nomor versi pada footer beranda berasal dari sumber yang sama.
+Versi aplikasi: `0.2.0`. Catatan rilis publik tersedia di `/changelog` dengan data pada `src/data/changelog.ts`. Nomor versi pada footer beranda berasal dari sumber yang sama.
 
 Gunakan `MAJOR.MINOR.PATCH`: MAJOR untuk perubahan tidak kompatibel, MINOR untuk fitur kompatibel, PATCH untuk perbaikan. Selaraskan data changelog, package, lockfile, dan dokumen setiap rilis. Seri saat ini mempertahankan major `0`.
+
+## [v0.2.0] - 2026-10-21
+
+Pengelolaan keluarga dan navigasi admin.
+
+### ✨ Fitur Baru
+
+- Tombol sampah dengan konfirmasi menghapus permanen keluarga beserta anggota dan hubungan melalui API khusus admin. Cache lokal dihapus setelah server berhasil; kegagalan mempertahankan data pada daftar.
+- Aset foto tersimpan terpisah dan belum ikut dihapus oleh operasi ini.
+
+### 🎨 UI/UX
+
+- Rute dashboard menjadi `/admin/dashboard`, pengelolaan menjadi `/admin/manage`, dan login tetap `/admin/login`. Admin yang sudah login dialihkan dari URL lama.
+- Tabel keluarga hanya ditampilkan pada halaman pengelolaan; dashboard memuat ringkasan statistik.
+- Tombol Dashboard admin pada navbar silsilah mengarah kembali ke dashboard; mobile memakai ikon dasbor.
+
+### Dokumentasi dan pengujian
+
+- Sinkronisasi PRD, desain, skema API, arsitektur, README, metadata package, dan changelog publik.
+- Pengujian API mencakup sesi wajib, validasi slug, target penghapusan, dan kegagalan database. Regresi browser mencakup pembatalan, keberhasilan, serta kegagalan penghapusan.
 
 ## [v0.1.0] - 2026-10-21
 

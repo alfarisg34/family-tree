@@ -1,4 +1,4 @@
-import { database, validSlug, validateFamily, listTrees, readTree, writeTree, writeMember, removeMember, writeAsset } from '../server/database.mjs';
+import { database, validSlug, validateFamily, listTrees, readTree, writeTree, removeTree, writeMember, removeMember, writeAsset } from '../server/database.mjs';
 import { hasSession, validPassword, sessionCookie } from '../server/session.mjs';
 
 const LIMIT = 4_000_000;
@@ -22,7 +22,7 @@ function json(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
-export function createHandler(repository = { database, listTrees, readTree, writeTree, writeMember, removeMember, writeAsset }) {
+export function createHandler(repository = { database, listTrees, readTree, writeTree, removeTree, writeMember, removeMember, writeAsset }) {
   return async function handler(request, response) {
     const url = new URL(request.url, 'http://localhost');
     const action = url.searchParams.get('action') || 'health';
@@ -56,6 +56,12 @@ export function createHandler(repository = { database, listTrees, readTree, writ
         if (!validSlug(slug)) return json(response, 400, { error: 'Alamat keluarga tidak valid.' });
         const data = await repository.readTree(slug);
         return json(response, data ? 200 : 404, data || { error: 'Keluarga tidak ditemukan.' });
+      }
+      if (action === 'tree' && method === 'DELETE') {
+        const slug = url.searchParams.get('slug');
+        if (!validSlug(slug)) return json(response, 400, { error: 'Alamat keluarga tidak valid.' });
+        await repository.removeTree(slug);
+        return json(response, 200, { success: true });
       }
       if (action === 'tree' && method === 'POST') {
         const data = await readBody(request);

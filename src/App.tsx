@@ -43,7 +43,7 @@ export const App: React.FC = () => {
   };
 
   if (path === 'changelog') return <ChangelogPage />;
-  if (['admin', 'admin/login', 'manage'].includes(path)) return <AdminArea path={path} onNavigate={navigate} />;
+  if (['admin', 'admin/login', 'manage', 'admin/dashboard', 'admin/manage'].includes(path)) return <AdminArea path={path} onNavigate={navigate} />;
   return window.location.pathname.replace(/\//g, '') === '' ? <LandingPage /> : <FamilyTreeApp key={path} currentSlug={path} onNavigate={navigate} />;
 };
 

@@ -27,6 +27,8 @@
 .admin-table small, .admin-member-row small { display: block; color: var(--text-secondary); font-size: 11px; margin-top: 7px; }
 .admin-row-actions { display: flex; align-items: center; gap: 8px; }
 .admin-row-actions a { color: var(--text-secondary); }
+.admin-row-actions .admin-delete-button { color: #b42318; border-color: rgba(180, 35, 24, .2); }
+.admin-row-actions .admin-delete-button:hover:not(:disabled) { background: rgba(180, 35, 24, .08); border-color: #b42318; }
 .admin-create-form { padding: 25px; display: grid; grid-template-columns: 1fr 1fr auto; align-items: start; gap: 18px; }
 .admin-create-form > button { margin-top: 22px; }
 .admin-toolbar h2 { font-family: var(--font-display); font-size: 22px; }

@@ -20,12 +20,16 @@ beforeEach(async () => {
 });
 
 test('dashboard and management require login; successful sessions can access both', () => {
-  for (const path of ['admin', 'manage']) {
+  for (const path of ['admin/dashboard', 'admin/manage']) {
     assert.equal(getAdminRedirect(path, false), '/admin/login');
     assert.equal(getAdminRedirect(path, true), null);
   }
   assert.equal(getAdminRedirect('admin/login', false), null);
-  assert.equal(getAdminRedirect('admin/login', true), '/admin');
+  assert.equal(getAdminRedirect('admin/login', true), '/admin/dashboard');
+  assert.equal(getAdminRedirect('admin', true), '/admin/dashboard');
+  assert.equal(getAdminRedirect('manage', true), '/admin/manage');
+  assert.equal(getAdminRedirect('admin', false), '/admin/login');
+  assert.equal(getAdminRedirect('manage', false), '/admin/login');
   assert.equal(getAdminRedirect('keluargabanisukandi', false), null);
 });
 
