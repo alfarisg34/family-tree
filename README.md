@@ -1,4 +1,4 @@
-# Silsilah Keluarga
+# SilsilaKu
 
 Aplikasi silsilah keluarga berbasis React, TypeScript, dan Vite. Data keluarga, anggota, dan foto disimpan di PostgreSQL Neon melalui API server. Kredensial database tidak dikirim ke browser.
 

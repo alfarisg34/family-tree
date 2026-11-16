@@ -1,6 +1,6 @@
-# Desain Antarmuka — Silsilah Keluarga
+# Desain Antarmuka — SilsilaKu
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0`.
+Tanggal acuan: 16 November 2026. Versi aplikasi: `0.2.1`.
 Dokumen ini menjelaskan desain yang diimplementasikan pada workspace saat ini. Kebutuhan produk dijelaskan di [PRD.md](PRD.md).
 
 ## 1. Prinsip desain

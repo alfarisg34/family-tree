@@ -12,9 +12,9 @@ export function ChangelogPage() {
   return (
     <div className="landing-page changelog-page">
       <header className="landing-header landing-shell">
-        <a className="landing-brand" href="/" aria-label="Silsilah Keluarga — beranda">
+        <a className="landing-brand" href="/" aria-label="SilsilaKu — beranda">
           <span className="landing-brand-icon"><GitGraph size={22} /></span>
-          <span>Silsilah<span className="landing-brand-accent"> Keluarga</span></span>
+          <span>Silsila<span className="landing-brand-accent">Ku</span></span>
         </a>
         <a className="changelog-back" href="/"><ArrowLeft size={16} /> Beranda</a>
       </header>

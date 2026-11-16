@@ -11,6 +11,18 @@ export interface ReleaseEntry {
 
 // New releases go first. The homepage and release page share this version source.
 export const CHANGELOG_DATA: ReleaseEntry[] = [{
+  version: '0.2.1',
+  date: '2026-11-16',
+  type: 'PATCH',
+  title: 'Rebranding SilsilaKu, Favicon & Sinkronisasi Tab',
+  summary: 'Pembaruan identitas merek menjadi SilsilaKu, favicon pohon silsilah keluarga SVG kustom, dan sinkronisasi judul tab browser secara dinamis.',
+  changes: [
+    { category: 'UI/UX', title: 'Identitas merek baru SilsilaKu', description: 'Penyelarasan nama aplikasi menjadi SilsilaKu pada navbar landing page, catatan rilis, dashboard admin, dan footer.' },
+    { category: 'UI/UX', title: 'Favicon pohon silsilah keluarga', description: 'Favicon kustom format SVG beresolusi tajam dengan ornamen pohon silsilah bernuansa emas dan bingkai squircle berlatar gelap.' },
+    { category: 'UI/UX', title: 'Sinkronisasi judul tab browser', description: 'Judul tab browser kini dinamis menyesuaikan rute aktif (Beranda SilsilaKu, nama pohon keluarga, dashboard admin, dan changelog).' },
+    { category: 'DOKUMENTASI', title: 'Penyelarasan dokumen spesifikasi', description: 'Sinkronisasi PRD.md, architecture.md, Design.md, README.md, dan CHANGELOG.md sesuai identitas rilis SilsilaKu v0.2.1.' },
+  ],
+}, {
   version: '0.2.0',
   date: '2026-10-21',
   type: 'MINOR',
@@ -28,7 +40,7 @@ export const CHANGELOG_DATA: ReleaseEntry[] = [{
   date: '2026-10-21',
   type: 'MINOR',
   title: 'Lebih dekat dengan cerita keluarga',
-  summary: 'Rilis pertama Silsilah Keluarga: peta interaktif, profil, galeri kenangan, dan pengelolaan keluarga dengan pengalaman yang nyaman di komputer maupun ponsel.',
+  summary: 'Rilis pertama SilsilaKu: peta interaktif, profil, galeri kenangan, dan pengelolaan keluarga dengan pengalaman yang nyaman di komputer maupun ponsel.',
   changes: [
     { category: 'FITUR', title: 'Jelajahi peta keluarga', description: 'Geser dan zoom peta, temukan anggota melalui pencarian atau filter generasi, serta gunakan minimap dan legenda untuk memahami hubungan keluarga.' },
     { category: 'FITUR', title: 'Ringkasan setiap keluarga', description: 'Overview berbentuk kartu memudahkan Anda membuka ringkasan dan peta keluarga yang ingin dikenal lebih jauh.' },

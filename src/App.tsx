@@ -37,6 +37,16 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  useEffect(() => {
+    if (path === 'changelog') {
+      document.title = 'Catatan Pembaruan | SilsilaKu';
+    } else if (['admin', 'admin/login', 'manage', 'admin/dashboard', 'admin/manage'].includes(path)) {
+      document.title = 'Panel Admin | SilsilaKu';
+    } else if (window.location.pathname.replace(/\//g, '') === '') {
+      document.title = 'SilsilaKu - Peta Silsilah Keluarga Interaktif';
+    }
+  }, [path]);
+
   const navigate = (destination: string, replace = false) => {
     window.history[replace ? 'replaceState' : 'pushState']({}, '', destination);
     setPath(getSlugFromUrl());
@@ -69,6 +79,16 @@ const FamilyTreeApp: React.FC<{ currentSlug: string; onNavigate: (path: string) 
     deleteMember,
     updateTreeMetadata
   } = useFamilyData(currentSlug);
+
+  useEffect(() => {
+    const currentTree = allTrees.find(t => t.slug === currentSlug);
+    const title = currentTree?.tree_name || familyData?.familyTreeName;
+    if (title) {
+      document.title = `${title} | SilsilaKu`;
+    } else {
+      document.title = 'Peta Silsilah | SilsilaKu';
+    }
+  }, [currentSlug, allTrees, familyData?.familyTreeName]);
 
   // Compute graph layout
   const layout = useMemo(() => {

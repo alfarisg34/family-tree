@@ -1,7 +1,7 @@
-# Arsitektur Sistem — Silsilah Keluarga
+# Arsitektur Sistem — SilsilaKu
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0`.
-Status: dokumentasi implementasi rilis v0.2.0. Kebutuhan: [PRD.md](PRD.md); kontrak data/API: [Schema.md](Schema.md); antarmuka: [Design.md](Design.md).
+Tanggal acuan: 16 November 2026. Versi aplikasi: `0.2.1`.
+Status: dokumentasi implementasi rilis v0.2.1. Kebutuhan: [PRD.md](PRD.md); kontrak data/API: [Schema.md](Schema.md); antarmuka: [Design.md](Design.md).
 
 ## 1. Gambaran sistem
 

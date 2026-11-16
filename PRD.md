@@ -1,11 +1,11 @@
-# Product Requirements Document — Silsilah Keluarga
+# Product Requirements Document — SilsilaKu
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0` sesuai `package.json`.
-Status: dokumentasi implementasi rilis v0.2.0.
+Tanggal acuan: 16 November 2026. Versi aplikasi: `0.2.1` sesuai `package.json`.
+Status: dokumentasi implementasi rilis v0.2.1.
 
 ## 1. Ringkasan produk
 
-Silsilah Keluarga adalah aplikasi web berbahasa Indonesia untuk mengenal anggota keluarga, memahami hubungan lintas generasi, dan menyimpan cerita serta foto keluarga. Setiap keluarga memiliki alamat berbasis slug, misalnya `/<slug-keluarga>`. Pengunjung dapat menjelajahi peta dan profil tanpa login; admin mengelola data melalui sesi server.
+SilsilaKu adalah aplikasi web berbahasa Indonesia untuk mengenal anggota keluarga, memahami hubungan lintas generasi, dan menyimpan cerita serta foto keluarga. Setiap keluarga memiliki alamat berbasis slug, misalnya `/<slug-keluarga>`. Pengunjung dapat menjelajahi peta dan profil tanpa login; admin mengelola data melalui sesi server.
 
 Masalah yang diselesaikan:
 

@@ -15,9 +15,9 @@ export function LandingPage() {
   return (
     <div className="landing-page">
       <header className="landing-header landing-shell">
-        <a className="landing-brand" href="/" aria-label="Silsilah Keluarga — beranda">
+        <a className="landing-brand" href="/" aria-label="SilsilaKu — beranda">
           <span className="landing-brand-icon"><GitGraph size={22} /></span>
-          <span>Silsilah<span className="landing-brand-accent"> Keluarga</span></span>
+          <span>Silsila<span className="landing-brand-accent">Ku</span></span>
         </a>
         <nav aria-label="Navigasi utama">
           <a className="landing-nav-link" href="#fitur">Fitur aplikasi</a>
@@ -85,7 +85,7 @@ export function LandingPage() {
       </main>
 
       <footer className="landing-footer landing-shell">
-        <span><GitGraph size={17} /> Silsilah Keluarga</span>
+        <span><GitGraph size={17} /> SilsilaKu</span>
         <p>Merawat hubungan. Menyimpan kenangan.</p>
         <div className="landing-footer-links">
           <a href="/changelog" aria-label={`Catatan rilis ${LATEST_VERSION_LABEL}`}>Catatan rilis <span className="landing-version">{LATEST_VERSION_LABEL}</span></a>

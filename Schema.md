@@ -1,6 +1,6 @@
 # Skema Data dan Kontrak API
 
-Tanggal acuan: 21 Oktober 2026. Versi aplikasi: `0.2.0`.
+Tanggal acuan: 16 November 2026. Versi aplikasi: `0.2.1`.
 Sumber utama: `server/database.mjs`, `src/types/family.ts`, dan `api/data.mjs`.
 
 ## 1. Penyimpanan aktif

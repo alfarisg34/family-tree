@@ -1,10 +1,24 @@
 # Changelog
 
-Catatan perubahan Silsilah Keluarga. Tanggal acuan dokumentasi: 21 Oktober 2026.
+Catatan perubahan SilsilaKu. Tanggal acuan dokumentasi: 16 November 2026.
 
-Versi aplikasi: `0.2.0`. Catatan rilis publik tersedia di `/changelog` dengan data pada `src/data/changelog.ts`. Nomor versi pada footer beranda berasal dari sumber yang sama.
+Versi aplikasi: `0.2.1`. Catatan rilis publik tersedia di `/changelog` dengan data pada `src/data/changelog.ts`. Nomor versi pada footer beranda berasal dari sumber yang sama.
 
 Gunakan `MAJOR.MINOR.PATCH`: MAJOR untuk perubahan tidak kompatibel, MINOR untuk fitur kompatibel, PATCH untuk perbaikan. Selaraskan data changelog, package, lockfile, dan dokumen setiap rilis. Seri saat ini mempertahankan major `0`.
+
+## [v0.2.1] - 2026-11-16
+
+Rebranding SilsilaKu, favicon pohon silsilah keluarga, dan sinkronisasi judul tab browser dinamis.
+
+### 🎨 UI/UX
+
+- Penyelarasan identitas merek baru **SilsilaKu** pada navbar landing page, halaman catatan rilis, header dashboard admin, dan footer.
+- Pembuatan aset favicon kustom format SVG (`public/favicon.svg`) beresolusi tinggi dengan ornamen percabangan pohon silsilah keluarga bernuansa emas di atas latar squircle gelap.
+- Sinkronisasi dinamis judul tab browser (`document.title`) pada rute beranda, pohon silsilah keluarga (`{Nama Keluarga} | SilsilaKu`), panel admin, dan changelog.
+
+### 📝 Dokumentasi
+
+- Penyelarasan dokumen spesifikasi sistem (PRD.md, architecture.md, Design.md, README.md, dan CHANGELOG.md) untuk merefleksikan identitas SilsilaKu v0.2.1.
 
 ## [v0.2.0] - 2026-10-21
 

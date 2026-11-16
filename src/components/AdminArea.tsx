@@ -128,7 +128,7 @@ export function AdminArea({ path, onNavigate }: AdminAreaProps) {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <a href="/" className="admin-brand"><GitGraph size={23} /> Silsilah Keluarga <span>Admin</span></a>
+        <a href="/" className="admin-brand"><GitGraph size={23} /> SilsilaKu <span>Admin</span></a>
         <nav aria-label="Navigasi admin">
           <a href="/admin/dashboard" aria-current={path === 'admin/dashboard' ? 'page' : undefined} onClick={(event) => { event.preventDefault(); onNavigate('/admin/dashboard'); }}><LayoutDashboard size={16} /> Dashboard</a>
           <a href="/admin/manage" aria-current={path === 'admin/manage' ? 'page' : undefined} onClick={(event) => { event.preventDefault(); onNavigate('/admin/manage'); }}><Settings size={16} /> Kelola keluarga</a>
